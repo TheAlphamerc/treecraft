@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-const { program } = require("commander");
-const fs = require("fs-extra");
-const path = require("path");
+import fs from "fs-extra";
+import path from "path";
+import { program } from "commander";
+
 
 program
   .version("1.0.0")

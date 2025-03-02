@@ -1,0 +1,10 @@
+{
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".git",
+    ".idea",
+    ".vscode"
+  ]
+}
