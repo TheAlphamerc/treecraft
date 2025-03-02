@@ -1,0 +1,21 @@
+{
+  "name": "gen-struct",
+  "version": "1.0.0",
+  "main": "gen-struct.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thealphamerc/gen-struct.git"
+  },
+  "scripts": {
+    "create": "node gen-struct.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "commander": "^13.1.0",
+    "fs-extra": "^11.3.0"
+  }
+}
