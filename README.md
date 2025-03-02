@@ -62,11 +62,23 @@ Create `structure.json`:
 gen-struct structure.json
 ```
 
+### ⚙️ **Configuration Options**
+| Flag | Description |
+|------|-------------|
+| `--skip-all` | Skip all conflicts |
+| `--overwrite-all` | Overwrite all conflicts |
+
 ### ⚙️ How It Works
 - Reads the JSON file and interprets the nested structure.
 - Creates folders and files accordingly.
 - If a file has content in JSON, it writes that content into the file.
-- Ignores existing files unless manually deleted.
+- Conflict Analysis
+  - Before making any changes, the tool traverses the JSON structure and collects a list of files that already exist in the target directory. It then prints a summary (with relative paths) so you know which files are in conflict.
+- Interactive Resolution
+  - If --skip-all or --overwrite-all is provided, it applies that decision globally.
+Otherwise, for each conflict it prompts you with a question offering options to Skip (S), Overwrite (O), All Skip (A), or All Overwrite (B).
+Once a global decision is made (via “A” or “B”), it applies to all remaining conflicts.
+Creation Phase
 
 ### 📂 Example Output Structure
 After running the command, the following structure is created:
