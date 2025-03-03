@@ -6,18 +6,30 @@ import { Command } from 'commander';
 import readline from 'readline';
 import chalk from 'chalk';
 
-const program = new Command();
+interface Structure {
+  [key: string]: Structure | string;
+}
 
-program
+interface ConflictDecisions {
+  [key: string]: string;
+}
+
+export const genStruct = new Command();
+
+genStruct
   .version('1.0.0')
   .argument('<jsonConfig>', 'Path to JSON configuration file')
   .option('--skip-all', 'Skip all existing files')
   .option('--overwrite-all', 'Overwrite all existing files')
   .option('--manual', 'Manually resolve conflicts (default if no flag provided)')
-  .parse(process.argv);
+  .action(run);
 
-const options = program.opts();
-const jsonConfigPath = program.args[0];
+const options = genStruct.opts() as {
+  skipAll?: boolean;
+  overwriteAll?: boolean;
+  manual?: boolean;
+};
+const jsonConfigPath = genStruct.args[0];
 const targetRoot = process.cwd();
 
 if (!fs.existsSync(jsonConfigPath)) {
@@ -25,25 +37,15 @@ if (!fs.existsSync(jsonConfigPath)) {
   process.exit(1);
 }
 
-const structure = JSON.parse(fs.readFileSync(jsonConfigPath, 'utf8'));
+const structure: Structure = JSON.parse(fs.readFileSync(jsonConfigPath, 'utf8'));
 
-/**
- * Recursively analyze the JSON structure to find conflict files.
- * Only files are considered as conflicts (directories are merged).
- *
- * @param {Object} structure - The JSON structure.
- * @param {string} currentPath - The current target directory.
- * @returns {Array<string>} - List of file paths that already exist.
- */
-function analyzeConflicts(structure, currentPath) {
-  let conflicts = [];
+function analyzeConflicts(structure: Structure, currentPath: string): string[] {
+  let conflicts: string[] = [];
   for (const key of Object.keys(structure)) {
     const fullPath = path.join(currentPath, key);
-    if (typeof structure[key] === 'object') {
-      // For directories, merge and check their children.
-      conflicts = conflicts.concat(analyzeConflicts(structure[key], fullPath));
+    if (typeof structure[key] === 'object' && structure[key] !== null) {
+      conflicts = conflicts.concat(analyzeConflicts(structure[key] as Structure, fullPath));
     } else {
-      // For files, check if they exist.
       if (fs.existsSync(fullPath)) {
         conflicts.push(fullPath);
       }
@@ -52,15 +54,7 @@ function analyzeConflicts(structure, currentPath) {
   return conflicts;
 }
 
-/**
- * Prompt the user for how to resolve a conflict for a given file.
- * Options:
- *  (S)kip, (O)verwrite, (A)ll Skip, (B) All Overwrite.
- *
- * @param {string} filePath - The full path of the conflict file.
- * @returns {Promise<string>} - Resolves to 'skip', 'overwrite', 'all-skip', or 'all-overwrite'.
- */
-function askUser(filePath) {
+function askUser(filePath: string): Promise<string> {
   return new Promise((resolve) => {
     const rl = readline.createInterface({
       input: process.stdin,
@@ -71,37 +65,26 @@ function askUser(filePath) {
       (answer) => {
         rl.close();
         const normalized = answer.trim().toLowerCase();
-        if (normalized === 'o') {
-          resolve('overwrite');
-        } else if (normalized === 's') {
-          resolve('skip');
-        } else if (normalized === 'a') {
-          resolve('all-skip');
-        } else if (normalized === 'b') {
-          resolve('all-overwrite');
-        } else {
-          // Default to skip if unclear.
-          resolve('skip');
-        }
+        if (normalized === 'o') resolve('overwrite');
+        else if (normalized === 's') resolve('skip');
+        else if (normalized === 'a') resolve('all-skip');
+        else if (normalized === 'b') resolve('all-overwrite');
+        else resolve('skip');
       }
     );
   });
 }
 
-/**
- * Recursively creates directories and files based on the JSON configuration.
- * It uses the conflictDecisions map to decide for files that already exist.
- *
- * @param {Object} structure - The JSON configuration.
- * @param {string} currentPath - The current directory path.
- * @param {Object} conflictDecisions - Map of filePath => decision ('skip' or 'overwrite').
- */
-async function createStructure(structure, currentPath, conflictDecisions) {
+async function createStructure(
+  structure: Structure,
+  currentPath: string,
+  conflictDecisions: ConflictDecisions
+): Promise<void> {
   for (const key of Object.keys(structure)) {
     const fullPath = path.join(currentPath, key);
-    if (typeof structure[key] === 'object') {
+    if (typeof structure[key] === 'object' && structure[key] !== null) {
       fs.ensureDirSync(fullPath);
-      await createStructure(structure[key], fullPath, conflictDecisions);
+      await createStructure(structure[key] as Structure, fullPath, conflictDecisions);
     } else {
       if (fs.existsSync(fullPath)) {
         const decision = conflictDecisions[fullPath];
@@ -112,17 +95,13 @@ async function createStructure(structure, currentPath, conflictDecisions) {
           console.log(chalk.blue(`🔄 Overwriting file: ${fullPath}`));
         }
       }
-      fs.writeFileSync(fullPath, structure[key] || '');
+      fs.writeFileSync(fullPath, structure[key] as string || '');
       console.log(chalk.green(`✅ Created file: ${fullPath}`));
     }
   }
 }
 
-/**
- * Main function to run the gen-struct tool.
- * It first analyzes conflicts, displays a summary, and then determines how to resolve them.
- */
-async function run() {
+async function run(): Promise<void> {
   const conflicts = analyzeConflicts(structure, targetRoot);
   if (conflicts.length > 0) {
     console.log(chalk.yellow(`\nFound ${conflicts.length} existing file(s):`));
@@ -133,16 +112,15 @@ async function run() {
   } else {
     console.log(chalk.green('No conflicts found. Proceeding to create the structure...\n'));
   }
-  
-  // Prepare a map for conflict resolutions.
-  const conflictDecisions = {};
+
+  const conflictDecisions: ConflictDecisions = {};
   if (conflicts.length > 0) {
     if (options.skipAll) {
       conflicts.forEach((file) => (conflictDecisions[file] = 'skip'));
     } else if (options.overwriteAll) {
       conflicts.forEach((file) => (conflictDecisions[file] = 'overwrite'));
     } else {
-      let globalDecision = null;
+      let globalDecision: string | null = null;
       for (const file of conflicts) {
         if (globalDecision === 'all-skip') {
           conflictDecisions[file] = 'skip';
@@ -160,13 +138,13 @@ async function run() {
       }
     }
   }
-  
-  // Optionally, you can call the gen-tree functionality here to visualize the current directory.
-  // For example, you might invoke a function printTree(targetRoot) to show the tree before changes.
-  
-  // Create the directory structure based on the JSON configuration.
+
+
   await createStructure(structure, targetRoot, conflictDecisions);
   console.log(chalk.green('\n✅ Directory structure created successfully!'));
-}
 
-run();
+}
+run().catch((error) => {
+  console.error(chalk.red('❌ Error occurred:'), error);
+  process.exit(1);
+});

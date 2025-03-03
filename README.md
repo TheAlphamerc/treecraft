@@ -1,13 +1,13 @@
-# 🚀 **gen-struct & gen-tree**
-A simple cli tool for Project Scaffolding & Directory Visualization.
+# 🚀 **tree create & tree view**
+A simple tree cli tool for Project Scaffolding & Directory Visualization.
 
 ### 📌 Features
-- **gen-struct**: Project Scaffolding & Folder Structure Generator.A tool to generate folder structures from a JSON configuration.
+- **tree create**: Project Scaffolding & Folder Structure Generator.A tool to generate folder structures from a JSON configuration.
   - ✅ **Project Scaffolding** – Quickly create project structures.
   - ✅ **Create Nested Folders & Files** – Generates directories and files recursively.
   - ✅ **Pre-Filled File Content** – Populate files with predefined content from JSON.
 
-- **gen-tree**: Directory Structure Visualizer.A CLI tool to display a tree-like visualization of a given directory.
+- **tree view**: Directory Structure Visualizer.A CLI tool to display a tree-like visualization of a given directory.
   - ✅ **Visualize Directory Structure** – Display folder structure in a tree-like format.
   - ✅ **Use .gitignore** – Flag to exclude files/folders listed in `.gitignore`.
   - ✅ **Custom Configuration** – Save exclusion rules to `.gentreerc` for future use.
@@ -32,7 +32,7 @@ To use commands anywhere:
 npm link
 ```
 
-## 🏗️ **gen-struct Usage**
+## 🏗️ **tree create Usage**
 **1️⃣ Define a JSON Structure File**
 Create `structure.json`:
 ```json
@@ -59,7 +59,7 @@ Create `structure.json`:
 
 ### **2️⃣ Run the Generator**
 ```sh
-gen-struct structure.json
+tree create structure.json
 ```
 
 ### ⚙️ **Configuration Options**
@@ -105,11 +105,11 @@ my-project/
 - Automation – Use it in CI/CD pipelines.
 
 
-## 🌳 **gen-tree Usage**
+## 🌳 **tree view Usage**
 ### **1️⃣ Basic Usage**
 To generate a **tree-like directory structure**, run:
 ```sh
-gen-tree /path/to/directory
+tree view /path/to/directory
 ```
 If no path is given, it defaults to the **current directory**.
 
@@ -122,7 +122,7 @@ Create a `.gentreerc` file:
 ```
 Then run:
 ```sh
-gen-tree
+tree view
 ```
 Excluded folders won't appear in the tree output.
 
@@ -134,7 +134,7 @@ Excluded folders won't appear in the tree output.
 ---
 
 ### 🏆 **Examples**
-### **📂 Sample Project Structure**
+### **Sample Project Structure**
 ```
 my-project/
 ├── src/
@@ -148,15 +148,15 @@ my-project/
 
 ### **CLI Output**
 ```sh
-gen-tree --gitignore
+tree view --gitignore
 ```
 ```
-📁 Directory structure of: my-project
+ Directory structure of: my-project
 
-📂 src
-│  ├── 📂 components
-│  ├── 📂 pages
-└── 📄 README.md
+src
+│  ├── components
+│  ├──  pages
+└── README.md
 ```
 ### 🎯 Use Cases
 - ✅ **codebase exploration** – Understand the project structure at a glance.

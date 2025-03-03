@@ -10,8 +10,7 @@
     "test": "jest"
   },
   "bin": {
-    "gen-tree": "gen-tree.js",
-    "gen-struct": "gen-struct.js"
+    "tree": "index.js"
   },
   "keywords": [],
   "author": "",
