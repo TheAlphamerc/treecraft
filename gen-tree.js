@@ -3,6 +3,7 @@
 import fs from "fs-extra";
 import path from "path";
 import chalk from "chalk";
+import ignore from "ignore";
 
 const INDENT = "  "; // Spacing for tree levels
 
@@ -11,42 +12,47 @@ const INDENT = "  "; // Spacing for tree levels
  * @param {boolean} useGitignore - Whether to use `.gitignore`
  */
 function loadExclusions(useGitignore = false) {
-  let exclusions = [];
+  const ig = ignore();
 
-  // Load exclusions from `.gentreerc`
+  // Load exclusions from .gentreerc
   const configPath = path.join(process.cwd(), ".gentreerc");
   if (fs.existsSync(configPath)) {
     try {
       const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-      exclusions = config.exclude || [];
+      if (Array.isArray(config.exclude)) {
+        ig.add(config.exclude.join('\n'));
+      }
     } catch (error) {
       console.error(chalk.red("❌ Error reading .gentreerc file"));
     }
   }
 
-  // Load exclusions from `.gitignore` if flag is set
+  // Load exclusions from .gitignore if flag is set
   if (useGitignore) {
     const gitignorePath = path.join(process.cwd(), ".gitignore");
     if (fs.existsSync(gitignorePath)) {
       const gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
-      exclusions = exclusions.concat(
-        gitignoreContent.split("\n").map((line) => line.trim()).filter((line) => line && !line.startsWith("#"))
-      );
+      ig.add(gitignoreContent);
     }
   }
-
-  return exclusions;
+  return ig;
 }
 
 /**
  * Recursively prints the directory tree, ignoring excluded folders.
  * @param {string} dirPath - The root directory path.
  * @param {string} prefix - The prefix for tree indentation.
- * @param {Array} excluded - List of directories to exclude.
+ * @param {Object} ig - Ignore instance with exclusion rules.
+ * @param {string} rootPath - Project root path for relative checks.
  */
-function printTree(dirPath, prefix = "", excluded = []) {
+function printTree(dirPath, prefix = "", ig, rootPath) {
+  
   const items = fs.readdirSync(dirPath);
-  const filteredItems = items.filter((item) => !excluded.includes(item)); // Exclude folders
+  const filteredItems = items.filter((item) => {
+    const fullPath = path.join(dirPath, item);
+    const relativePath = path.relative(rootPath, fullPath);
+    return !ig.ignores(relativePath);
+  });
 
   filteredItems.forEach((item, index) => {
     const fullPath = path.join(dirPath, item);
@@ -55,7 +61,7 @@ function printTree(dirPath, prefix = "", excluded = []) {
 
     if (fs.statSync(fullPath).isDirectory()) {
       console.log(chalk.blue(`${prefix}${connector} 📂 ${item}`));
-      printTree(fullPath, prefix + (isLast ? "   " : "│  "), excluded); // Recursive call
+      printTree(fullPath, prefix + (isLast ? "   " : "│  "), ig, rootPath);
     } else {
       console.log(chalk.green(`${prefix}${connector} 📄 ${item}`));
     }
@@ -74,7 +80,8 @@ if (!fs.existsSync(targetPath)) {
 }
 
 // Load exclusions
-const excludedFolders = loadExclusions(useGitignore);
+const excluded = loadExclusions(useGitignore);
+const rootPath = process.cwd(); // Root directory for relative path checks
 
 console.log(chalk.bold.yellow(`📁 Directory structure of: ${targetPath}\n`));
-printTree(targetPath, "", excludedFolders);
+printTree(targetPath, "", excluded, rootPath);
