@@ -1,47 +1,26 @@
-#!/usr/bin/env node
-import chalk from 'chalk';
-// import genTree from './gen-tree.js';
 import { Command } from 'commander';
-import { genStruct } from './gen-struct';
+import chalk from 'chalk';
+import { vizCommand } from './commands/viz';
+import { genCommand } from './commands/gen';
+import { statsCommand } from './commands/stats';
+import { exportCommand } from './commands/export';
+import { searchCommand } from './commands/search';
 
-const [, , command, ...args] = process.argv;
+const program = new Command();
 
-process.on("SIGINT", () => process.exit(0));
-process.on("SIGTERM", () => process.exit(0));
+program
+  .name('treecraft')
+  .description('A powerful CLI for directory visualization and generation')
+  .version('1.0.0');
 
+program.addCommand(vizCommand);
+program.addCommand(genCommand);
+program.addCommand(statsCommand);
+program.addCommand(exportCommand);
+program.addCommand(searchCommand);
 
-async function main() {
-  const program = new Command()
-    .name('struct')
-    .description('A simple cli tool for Project Scaffolding & Directory Visualization.')
-    .version('1.0.0');
+program.parse(process.argv);
 
-  program.addCommand(genStruct);
-  program.parse();
-
+if (!process.argv.slice(2).length) {
+  program.outputHelp((txt) => chalk.green(txt));
 }
-
-// async function runCommand() {
-//   try {
-//     switch (command) {
-//       case 'gen-tree':
-//         await genTree(args);
-//         break;
-//       case 'gen-struct':
-//         await genStruct(args);
-//         break;
-//       default:
-//         console.error(chalk.red(`❌ Unknown command: ${command}`));
-//         console.log(chalk.blue('Usage:'));
-//         console.log(chalk.yellow('  gen-cli gen-tree [directory] [--gitignore]'));
-//         console.log(chalk.yellow('  gen-cli gen-struct <jsonConfig> [--skip-all|--overwrite-all|--manual]'));
-//         process.exit(1);
-//     }
-//   } catch (error) {
-//     console.error('Error:', error.message);
-//     process.exit(1);
-//   }
-// }
-
-// runCommand();
-main();
