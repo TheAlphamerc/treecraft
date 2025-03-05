@@ -16,3 +16,11 @@ export interface FileMetadata {
   mtime: string; // Last modified time (ISO string)
   children?: FileNode; // For directories
 }
+
+export interface Stats {
+  files: number;
+  dirs: number;
+  totalSize: number;
+  fileTypes?: { [ext: string]: number };
+  sizeDist?: { '<1KB': number; '1KB-1MB': number; '>1MB': number };
+}

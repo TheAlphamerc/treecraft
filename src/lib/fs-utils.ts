@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs';
-import { join } from 'path';
-import { FileMetadata, FileNode } from '../types';
+import { extname, join } from 'path';
+import { FileMetadata, FileNode, Stats } from '../types';
 import { filterTree } from './filters';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
@@ -120,4 +120,47 @@ export function generateStructure(spec: FileNode | FileMetadata, output: string,
       writeFileSync(fullPath, fileContent, 'utf-8');
     }
   }
+}
+
+export function computeStats(tree: FileNode | FileMetadata, options: {
+  sizeDist?: boolean;
+  fileTypes?: boolean;
+  sort?: 'size' | 'count'
+} = {}): Stats {
+  let files = 0;
+  let dirs = 0;
+  let totalSize = 0;
+  const sizeDist = options.sizeDist ? { '<1KB': 0, '1KB-1MB': 0, '>1MB': 0 } : undefined;
+  const fileTypes: any = options.fileTypes ? {} : undefined;
+
+  function traverse(node: FileNode | FileMetadata) {
+    for (const [name, value] of Object.entries(node)) {
+      if (typeof value === 'object' && value !== null && 'type' in value) {
+        if (value.type === 'file') {
+          files++;
+          totalSize += value.size;
+          if (sizeDist) {
+            if (value.size < 1024) sizeDist['<1KB']++;
+            else if (value.size < 1024 * 1024) sizeDist['1KB-1MB']++;
+            else sizeDist['>1MB']++;
+          }
+          if (fileTypes) {
+            const ext = extname(name) || 'no-ext';
+            fileTypes[ext] = (fileTypes[ext] || 0) + 1;
+          }
+        } else if (value.type === 'directory') {
+          dirs++;
+          traverse(value.children || {});
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        dirs++;
+        traverse(value);
+      } else if (value === null) {
+        files++;
+      }
+    }
+  }
+
+  traverse(tree);
+  return { files, dirs, totalSize, sizeDist, fileTypes };
 }
