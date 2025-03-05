@@ -1,39 +1,53 @@
 import { Command } from 'commander';
-import { readFileSync, mkdirSync, writeFileSync, statSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { load } from 'js-yaml';
-import { formatTree } from '../lib/formatters';
+import chalk from 'chalk';
+import { FileNode } from '../types';
+import { generateStructure } from '../lib/fs-utils';
+import { parseTextTree } from '../lib/parser';
 
 export const genCommand = new Command()
   .name('gen')
-  .description('Generate directory structure')
-  .argument('<input>', 'Input file (JSON/YAML)')
-  .requiredOption('--output <path>', 'Output directory')
-  .option('--dry-run', 'Preview without creating')
-  .option('--skip-all', 'Skip all conflicts')
-  .option('--export <format>', 'Export format (text, json, yaml)')
+  .description('Generate directory structure from an input file')
+  .argument('<input>', 'Input file (JSON, YAML, or text tree)')
+  .requiredOption('-o, --output <path>', 'Output directory')
+  .option('-s, --skip-all', 'Skip existing files/directories')
+  .option('--o-a, --overwrite-all', 'Overwrite existing files/directories')
   .action((input, options) => {
-    const spec = load(readFileSync(input, 'utf-8')) || {};
-    if (options.dryRun) {
-      console.log(formatTree(spec, { export: options.export || 'text' }));
-      return;
+    // Check if output exists and handle conflicts
+    if (existsSync(options.output)) {
+      if (!options.skipAll && !options.overwriteAll) {
+        console.error(chalk.red(`Error: Output directory '${options.output}' already exists. Use --skip-all or --overwrite-all.`));
+        process.exit(1);
+      }
     }
-    generateStructure(spec, options.output, options);
-    if (options.export) {
-      console.log(formatTree(spec, options));
-    }
-  });
 
-function generateStructure(spec: any, output: string, options: any) {
-  for (const [name, content] of Object.entries(spec)) {
-    const path = join(output, name);
-    if (typeof content === 'object' && content !== null) {
-      mkdirSync(path, { recursive: true });
-      generateStructure(content, path, options);
-    } else {
-      if (options.skipAll && statSync(path, { throwIfNoEntry: false })) continue;
-      // @ts-ignore
-      writeFileSync(path, content || '');
+    // Read and parse the input file
+    let spec: FileNode;
+    const fileContent = readFileSync(input, 'utf-8');
+    const ext = input.toLowerCase().split('.').pop();
+    try {
+      if (ext === 'json') {
+        spec = JSON.parse(fileContent);
+      } else if (ext === 'yaml' || ext === 'yml') {
+        spec = load(fileContent) as FileNode;
+      } else if (ext === 'txt') {
+        spec = parseTextTree(fileContent);
+      } else {
+        console.error(chalk.red(`Error: Unsupported file format '${ext}'. Use .json, .yaml, or .txt.`));
+        process.exit(1);
+      }
+    } catch (err: any) {
+      console.error(chalk.red(`Error parsing '${input}': ${err.message}`));
+      process.exit(1);
     }
-  }
-}
+
+    // Generate the structure
+    generateStructure(spec, options.output, {
+      skipAll: options.skipAll,
+      overwriteAll: options.overwriteAll,
+    });
+
+    console.log(chalk.green(`Structure generated at '${options.output}'`));
+  });

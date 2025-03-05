@@ -2,6 +2,7 @@ import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { FileMetadata, FileNode } from '../types';
 import { filterTree } from './filters';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 /**
  * File system utilities for traversal.
@@ -82,4 +83,41 @@ export function calcTotalSize(tree: FileNode | FileMetadata | null): number {
   if (!tree || tree === null) return 0;
   if (typeof tree === 'string') return 1;
   return Object.values(tree).reduce((acc, val) => acc + (typeof val === 'object' ? calcTotalSize(val) : 0), 0);
+}
+export function generateStructure(spec: FileNode | FileMetadata, output: string, options: {
+  skipAll?: boolean;
+  overwriteAll?: boolean;
+}) {
+  // Ensure the output directory exists
+  if (!existsSync(output)) {
+    mkdirSync(output, { recursive: true });
+  }
+
+  for (const [name, content] of Object.entries(spec)) {
+    const fullPath = join(output, name);
+
+    if (typeof content === 'object' && content !== null) {
+      if (existsSync(fullPath)) {
+        if (options.skipAll) continue;
+        if (!options.overwriteAll) {
+          console.error(`Directory '${fullPath}' exists and no conflict flag provided`);
+          process.exit(1);
+        }
+      }
+      mkdirSync(fullPath, { recursive: true });
+      generateStructure(content, fullPath, options);
+    }
+    // Handle files
+    else {
+      if (existsSync(fullPath)) {
+        if (options.skipAll) continue;
+        if (!options.overwriteAll) {
+          console.error(`File '${fullPath}' exists and no conflict flag provided`);
+          process.exit(1);
+        }
+      }
+      const fileContent = content !== null ? content : '';
+      writeFileSync(fullPath, fileContent, 'utf-8');
+    }
+  }
 }
