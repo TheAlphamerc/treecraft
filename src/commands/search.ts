@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { buildTree } from '../lib/fs-utils';
 import { formatTree } from '../lib/formatters';
-import { FileNode } from '../types';
+import { FileMetadata, FileNode } from '../types';
 
 export const searchCommand = new Command()
   .name('search')
@@ -16,7 +16,7 @@ export const searchCommand = new Command()
     console.log(formatTree(results, options));
   });
 
-function searchTree(tree: FileNode | null | string, query: string, options: any): any {
+function searchTree(tree: FileNode | FileMetadata | null | string, query: string, options: any): any {
   const results: any = {};
   if (!tree || tree === null) return results;
   if (typeof tree === 'string') {
