@@ -16,11 +16,16 @@ export function parseTextTree(text: string): FileNode {
       process.exit(1);
     }
 
-    // Calculate depth based on indentation before the marker
     const indent = line.slice(0, itemStart);
     const depth = indent.length / 4;
 
-    // Extract name and content
+    // Validate indentation: must match expected pattern ('' for depth 0, '│   ' repeated for depth > 0)
+    const expectedIndent = depth === 0 ? '' : '│   '.repeat(depth);
+    if (indent !== expectedIndent) {
+      console.error(`Invalid indentation at line ${i + 1}: '${line}' - Expected '${expectedIndent}├──' or '${expectedIndent}└──'`);
+      process.exit(1);
+    }
+
     const contentStart = line.indexOf(':');
     const name = contentStart !== -1
       ? line.slice(itemStart + 4, contentStart).trim()
