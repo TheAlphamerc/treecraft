@@ -13,7 +13,7 @@ export const genCommand = new Command()
   .argument('<input>', 'Input file (JSON, YAML, or text tree)')
   .requiredOption('-o, --output <path>', 'Output directory')
   .option('-s, --skip-all', 'Skip existing files/directories')
-  .option('--o-a, --overwrite-all', 'Overwrite existing files/directories')
+  .option('-w, --overwrite-all', 'Overwrite existing files/directories')
   .action((input, options) => {
     // Check if output exists and handle conflicts
     if (existsSync(options.output)) {

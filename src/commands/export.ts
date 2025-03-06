@@ -1,6 +1,8 @@
 import { Command } from 'commander';
 import { buildTree } from '../lib/fs-utils';
 import { formatTree } from '../lib/formatters';
+import { statSync } from 'fs';
+import chalk from 'chalk';
 
 /**
  * Export the directory structure at <path> without visualization (standalone export).
@@ -24,8 +26,22 @@ export const exportCommand = new Command()
   .name('export')
   .description('Export directory structure')
   .argument('[path]', 'Directory to export', '.')
-  .requiredOption('--format <format>', 'Export format (text, json, yaml)')
+  .option('-f, --filter <patterns>', 'Include only patterns (comma-separated)')
+  .option('--fmt, --format <format>', 'Export format (text, json, yaml)', 'text')
   .action((path, options) => {
-    const tree = buildTree(path, options);
-    console.log(formatTree(tree, options));
+    try {
+      if (!statSync(path).isDirectory()) {
+        console.error(chalk.red(`Error: '${path}' is not a directory`));
+        process.exit(1);
+      }
+    } catch (err: any) {
+      console.error(chalk.red(`Error: Cannot access '${path}' - ${err.message}`));
+      process.exit(1);
+    }
+
+    const tree = buildTree(path, {
+      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+    });
+    const output = formatTree(tree, { export: options.format });
+    console.log(options.format === 'text' ? chalk.yellow('Export:\n') + chalk.green(output) : output);
   });

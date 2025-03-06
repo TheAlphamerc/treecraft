@@ -27,13 +27,13 @@ export const statsCommand = new Command()
   .name('stats')
   .description('Display directory statistics')
   .argument('[path]', 'Directory to analyze', '.')
+  .option('-s, --size-dist', 'Show size distribution')
+  .option('-x, --export <format>', 'Export format (text, json, yaml)')
   .option('-f, --filter <patterns>', 'Include only patterns (comma-separated)')
+  .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
   .option('-d, --depth <n>', 'Limit stats to depth', parseInt)
-  .option('-s, --sort <key>', 'Sort size distribution (size, count)', 'count')
-  .option('--exp, --export <format>', 'Export format (text, json, yaml)')
-  .option('--exl, --exclude <patterns>', 'Exclude patterns (comma-separated)')
-  .option('--ft, --file-types', 'Show file type breakdown')
-  .option('--sd, --size-dist', 'Show size distribution')
+  .option('-t, --file-types', 'Show file type breakdown')
+  .option('-r, --sort <key>', 'Sort size distribution (size, count)', 'count')
   .action((path, options) => {
     try {
       if (!statSync(path).isDirectory()) {

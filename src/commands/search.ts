@@ -10,8 +10,8 @@ export const searchCommand = new Command()
   .description('Search files by name or content')
   .argument('[path]', 'Directory to search', '.')
   .argument('<query>', 'Search term')
-  .option('--ext <pattern>', 'Limit to extensions (e.g., *.ts)')
-  .option('--exp, --export <format>', 'Export format (text, json, yaml)')
+  .option('-e <pattern>', 'Limit to extensions (e.g., *.ts)')
+  .option('-x, --export <format>', 'Export format (text, json, yaml)')
   .action((path, query, options) => {
     try {
       if (!statSync(path).isDirectory()) {
