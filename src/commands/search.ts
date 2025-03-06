@@ -1,39 +1,34 @@
 import { Command } from 'commander';
-import { buildTree } from '../lib/fs-utils';
-import { formatTree } from '../lib/formatters';
+import { buildTree, searchTree } from '../lib/fs-utils';
+import { formatSearchResults, formatTree } from '../lib/formatters';
 import { FileMetadata, FileNode } from '../types';
+import { statSync } from 'fs';
+import chalk from 'chalk';
 
 export const searchCommand = new Command()
   .name('search')
-  .description('Search files by name')
+  .description('Search files by name or content')
   .argument('[path]', 'Directory to search', '.')
   .argument('<query>', 'Search term')
-  .option('--ext <pattern>', 'Limit to extensions')
-  .option('--export <format>', 'Export format (text, json, yaml)')
+  .option('--ext <pattern>', 'Limit to extensions (e.g., *.ts)')
+  .option('--exp, --export <format>', 'Export format (text, json, yaml)')
   .action((path, query, options) => {
-    const tree = buildTree(path, options);
-    const results = searchTree(tree, query, options);
-    console.log(formatTree(results, options));
-  });
-
-function searchTree(tree: FileNode | FileMetadata | null | string, query: string, options: any): any {
-  const results: any = {};
-  if (!tree || tree === null) return results;
-  if (typeof tree === 'string') {
-    if (tree.includes(query)) {
-      results[tree] = null;
-    }
-  } else {
-    console.log({ tree });
-    const j = Object.entries(tree);
-    for (const [key, value] of Object.entries(tree)) {
-      if (key.includes(query) && (!options.ext || key.endsWith(options.ext))) {
-        results[key] = value;
-      } else if (typeof value === 'object') {
-        const subResults = searchTree(value, query, options);
-        if (Object.keys(subResults).length) results[key] = subResults;
+    try {
+      if (!statSync(path).isDirectory()) {
+        console.error(chalk.red(`Error: '${path}' is not a directory`));
+        process.exit(1);
       }
+    } catch (err: any) {
+      console.error(chalk.red(`Error: Cannot access '${path}' - ${err.message}`));
+      process.exit(1);
     }
-  }
-  return results;
-}
+
+    // Build tree with minimal metadata unless content search is needed
+    const tree = buildTree(path, {});
+    const results = searchTree(tree, query, {
+      ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts
+      basePath: path,
+    });
+    const output = formatSearchResults(results, options);
+    console.log(output);
+  });

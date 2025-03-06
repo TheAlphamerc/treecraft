@@ -1,5 +1,7 @@
 import { dump } from 'js-yaml';
-import { Stats } from '../types';
+import { FileNode, Stats } from '../types';
+import chalk from 'chalk';
+import { sep } from 'path';
 
 /**
  * Formats output as text, JSON, or YAML.
@@ -34,7 +36,7 @@ function buildAsciiTree(tree: any, withMetadata?: boolean, prefix = ''): string 
     result += `${line}\n`;
 
     // Recurse into children for directories
-    if (node && typeof node === 'object' && 'children' in node && node.children) {
+    if (node && 'children' in node && node.children) {
       result += buildAsciiTree(node.children, withMetadata, prefix + (isLast ? '    ' : '│   '));
     } else if (typeof node === 'object' && node !== null && !('size' in node)) {
       result += buildAsciiTree(node, withMetadata, prefix + (isLast ? '    ' : '│   '));
@@ -43,13 +45,6 @@ function buildAsciiTree(tree: any, withMetadata?: boolean, prefix = ''): string 
   return result;
 }
 
-// Helper to format file size
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes}B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
-  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`;
-}
 
 export function formatStats(stats: Stats, options: { export?: string; sort?: string }): string {
   if (options.export === 'json') return JSON.stringify(stats, null, 2);
@@ -93,4 +88,39 @@ export function formatStats(stats: Stats, options: { export?: string; sort?: str
   }
 
   return output;
+}
+
+export function formatSearchResults(results: string[], options: { export?: string }): string {
+  if (options.export === 'json') return JSON.stringify(results, null, 2);
+  if (options.export === 'yaml') {
+    const tree = buildResultTree(results);
+    return dump(tree, { indent: 2 });
+  }
+
+  if (results.length === 0) return chalk.yellow('No matches found.');
+  return chalk.yellow('Search Results:\n') + results.map(path => chalk.green(path)).join('\n');
+}
+function buildResultTree(paths: string[]): FileNode {
+  const tree: FileNode = {};
+  paths.forEach(path => {
+    const parts = path.split(sep).filter(part => part); // Split by path separator, remove empty
+    let current = tree;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (i === parts.length - 1) {
+        current[part] = null; // File
+      } else {
+        current[part] = current[part] || {}; // Directory
+        current = current[part] as FileNode;
+      }
+    }
+  });
+  return tree;
+}
+// Helper to format file size
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`;
 }

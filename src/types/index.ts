@@ -15,6 +15,7 @@ export interface FileMetadata {
   size: number; // Size in bytes
   mtime: string; // Last modified time (ISO string)
   children?: FileNode; // For directories
+  content?: string; // For search results
 }
 
 export interface Stats {

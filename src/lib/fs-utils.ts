@@ -164,3 +164,35 @@ export function computeStats(tree: FileNode | FileMetadata, options: {
   traverse(tree);
   return { files, dirs, totalSize, sizeDist, fileTypes };
 }
+
+export function searchTree(tree: FileNode | FileMetadata, query: string, options: {
+  ext?: string;
+  basePath: string
+}): string[] {
+  const results: string[] = [];
+  const queryLower = query.toLowerCase();
+
+  function traverse(node: FileNode | FileMetadata, currentPath: string) {
+    for (const [name, value] of Object.entries(node)) {
+      const fullPath = join(currentPath, name);
+      const matchesExt = !options.ext || extname(name) === options.ext;
+
+      if (typeof value === 'object' && value !== null) {
+        if ('type' in value && value.type === 'file' && matchesExt) {
+          if (name.toLowerCase().includes(queryLower)) {
+            results.push(fullPath);
+          }
+        } else {
+          traverse(value.children || value, fullPath);
+        }
+      } else if (value === null && matchesExt) {
+        if (name.toLowerCase().includes(queryLower)) {
+          results.push(fullPath);
+        }
+      }
+    }
+  }
+
+  traverse(tree, options.basePath);
+  return results;
+}
