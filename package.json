@@ -18,8 +18,16 @@
     "type": "git",
     "url": "git+https://github.com/TheAlphamerc/gen-struct.git"
   },
-  "keywords": [],
-  "author": "",
+  "author": "TheAlphamerc <sonu.sharma045@gmail.com> (https://github.com/TheAlphamerc)",
+  "keywords": [
+    "cli",
+    "directory",
+    "visualization",
+    "generation",
+    "analysis",
+    "developers",
+    "testers"
+  ],
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/TheAlphamerc/gen-struct/issues"
