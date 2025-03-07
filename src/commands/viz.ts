@@ -5,34 +5,6 @@ import { formatTree } from '../lib/formatters';
 import { buildTree } from '../lib/fs-utils';
 import { FileMetadata, FileNode } from '../types';
 
-/**
- * Visualize the directory structure at <path>.
- * @param path Directory to visualize
- * @param options Command options
- *   --mode <mode>: Visualization mode (tree, graph, list, interactive).
- *   --depth <n>: Limit tree depth.
- *   --exclude <patterns>: Exclude patterns (comma-separated).
- *   --color: Enable colored output.
- *   --export <format>: Export format (text, json, yaml).
- * @example
- * Visualize the directory structure as a tree.
- * ```bash
- *   npm run start -- viz . --depth 2 --exclude node_modules,dist,.git,vscode --color
- * ```
- * Export the directory structure in txt file.
- * ```bash
- *    npm run start -- viz . --exclude node_modules,dist,.git,vscode| tail -n +4 > output/src.txt 
- * ```
- * Export the directory structure in json file.
- * ```bash
- *     npm run start -- viz . --exclude node_modules,dist,.git,vscode --export json  | tail  +4 > output/src.json
- * ```
- * Visualize the directory structure having only .ts or .json files
- * ```bash
-*    npm run start -- viz . --filter "*.ts, *.json" --exclude "node_modules" 
- * ```
- * @returns Directory visualization
- */
 export const vizCommand = new Command()
   .name('viz')
   .description('Visualize directory structure')
@@ -86,15 +58,16 @@ export const vizCommand = new Command()
     if (options.outputFile) {
       writeFileSync(options.outputFile, output, 'utf-8');
       console.log(chalk.blue(`Exported to ${options.outputFile}`));
-    } else if (options.export) {
-      console.log(output); // Clean output for redirection
-    } else if (options.color && options.mode === 'tree') {
+    }
+    else if (options.color && options.mode === 'tree') {
       console.log(chalk.yellow('Tree:\n') + chalk.green(output));
-    } else {
+    }
+    else if (options.export) {
+      console.log(output); // Clean output for redirection
+    }
+    else {
       console.log(output);
     }
-
-    console.log(output);
   });
 // Stub for list mode (pending full implementation)
 function formatList(tree: FileNode): string {

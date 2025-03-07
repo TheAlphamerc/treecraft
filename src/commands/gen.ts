@@ -1,11 +1,10 @@
-import { Command } from 'commander';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { load } from 'js-yaml';
 import chalk from 'chalk';
-import { FileNode } from '../types';
+import { Command } from 'commander';
+import { existsSync, readFileSync } from 'fs';
+import { load } from 'js-yaml';
 import { generateStructure } from '../lib/fs-utils';
 import { parseTextTree } from '../lib/parser';
+import { FileNode } from '../types';
 
 export const genCommand = new Command()
   .name('gen')

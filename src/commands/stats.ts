@@ -3,26 +3,7 @@ import { statSync } from 'fs';
 import { buildTree, computeStats } from '../lib/fs-utils';
 import { formatStats } from '../lib/formatters';
 import chalk from 'chalk';
-/**
- * Display statistics about the directory at <path>.
- * @param path Directory to analyze
- * @param options Command options
- *   --size-dist: Show size distribution (e.g., “10 files <1MB”).
- *   --export <format>: Export stats (text, json, yaml).
- *   --with-metadata: Include detailed metadata in exports.
- * 
- * 
- * @example
- * Show size distribution in the terminal.
- * ```bash
- *   treecraft stats . --size-dist
- * ```
- * Export stats as JSON.
- * ```sh
- *   treecraft stats ./src --export json > stats.json
- * ```
- * @returns Directory statistics
- */
+
 export const statsCommand = new Command()
   .name('stats')
   .description('Display directory statistics')

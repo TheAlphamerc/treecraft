@@ -1,6 +1,6 @@
 # TreeCraft
 
-A powerful CLI for directory visualization, generation, and analysis, designed for developers and testers. Works on macOS, Windows, and Linux.
+A simple CLI for directory visualization, generation, and analysis, designed for developers and testers.
 
 ## Installation
 
@@ -58,7 +58,16 @@ Display directory statistics.
 treecraft stats . -s -t -f "*.js"  # Stats for JS files
 ```
 
+### `search [path] <query>`
+Search files by name.
 
+- `-e, --ext <pattern>`: Limit extension (e.g., "*.ts")
+- `-x, --export <format>`: Export as text, json, yaml
+
+**Example:**
+```bash
+treecraft search . utils -e "*.ts" -x yaml  # Search TypeScript files
+```
 
 ## Supported Formats
 - **Text**: ASCII tree (viz, gen input/output).
@@ -67,7 +76,7 @@ treecraft stats . -s -t -f "*.js"  # Stats for JS files
 
 ## Contributing
 
-1. Clone: `git clone https://github.com/TheAlphamerc/tree-craft.git`
+1. Clone: `https://github.com/TheAlphamerc/treecraft.git`
 2. Install: `npm install`
 3. Build: `npm run build`
 4. Test: `npm test`

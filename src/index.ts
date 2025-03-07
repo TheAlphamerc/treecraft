@@ -3,7 +3,6 @@ import chalk from 'chalk';
 import { vizCommand } from './commands/viz';
 import { genCommand } from './commands/gen';
 import { statsCommand } from './commands/stats';
-import { exportCommand } from './commands/export';
 import { searchCommand } from './commands/search';
 
 const program = new Command();
@@ -16,7 +15,6 @@ program
 program.addCommand(vizCommand);
 program.addCommand(genCommand);
 program.addCommand(statsCommand);
-program.addCommand(exportCommand);
 program.addCommand(searchCommand);
 
 program.parse(process.argv);
