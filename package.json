@@ -11,6 +11,9 @@
     "test": "npm run build && jest",
     "test:cov": "npm run build && jest --coverage"
   },
+  "bin": {
+    "treecraft": "dist/index.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TheAlphamerc/gen-struct.git"
