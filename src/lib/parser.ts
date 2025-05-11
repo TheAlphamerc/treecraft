@@ -37,19 +37,30 @@ export function parseYamlTree(content: string): FileNode {
  * Parses a text-based ASCII tree into a FileNode structure
  * 
  * The tree must be in the standard format with '├──' or '└──' prefixes
- * and proper indentation to indicate hierarchy.
+ * and proper indentation using '│   ' to indicate hierarchy. File content
+ * can be specified using a colon after the filename.
  * 
- * Example:
+ * @example
+ * Basic directory structure:
  * ```
- * src
- * ├── lib
- * │   └── utils.js
- * └── index.js
+ * ├── src
+ * │   ├── lib
+ * │   │   └── utils.js
+ * │   └── index.js
+ * └── package.json
+ * ```
+ * 
+ * @example
+ * With file content:
+ * ```
+ * ├── src
+ * │   └── index.js: console.log('Hello world');
+ * └── package.json: {"name": "example"}
  * ```
  * 
  * @param text - ASCII tree text to parse
  * @returns The parsed FileNode structure
- * @throws Error if the tree structure is invalid
+ * @throws {Error} On invalid tree structure, indentation, or nesting
  */
 export function parseTextTree(text: string): FileNode {
   const lines = text.split(EOL).filter(line => line.trim());

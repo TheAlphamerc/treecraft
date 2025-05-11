@@ -30,6 +30,17 @@ export const vizCommand = new Command()
     // Validate that the path is a directory
     validateDirectory(path);
 
+    // Validate mode option
+    const validModes = ['tree', 'graph', 'list', 'interactive'];
+    if (options.mode && !validModes.includes(options.mode)) {
+      throw new ValidationError(`Invalid mode: '${options.mode}'. Valid modes are: ${validModes.join(', ')}`);
+    }
+
+    // Validate export format if provided
+    if (options.export && !['text', 'json', 'yaml'].includes(options.export)) {
+      throw new ValidationError(`Invalid export format: '${options.export}'. Use 'text', 'json', or 'yaml'.`);
+    }
+
     const tree = buildTree(path, {
       depth: options.depth || Infinity,
       withMetadata: options.withMetadata,
@@ -52,6 +63,7 @@ export const vizCommand = new Command()
         output = 'Interactive mode not yet implemented';
         break;
       default:
+        // This should never happen due to validation above, but adding as fallback
         throw new ValidationError(`Invalid mode: ${options.mode}`);
     }
 

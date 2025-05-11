@@ -159,6 +159,12 @@ export function computeStats(tree: FileNode | FileMetadata, options: {
   const sizeDist = options.sizeDist ? { '<1KB': 0, '1KB-1MB': 0, '>1MB': 0 } : undefined;
   const fileTypes: any = options.fileTypes ? {} : undefined;
 
+  /**
+   * Recursively traverse the directory tree to compute statistics
+   * 
+   * @param node - The current node in the tree (file or directory)
+   * @private
+   */
   function traverse(node: FileNode | FileMetadata) {
     for (const [name, value] of Object.entries(node)) {
       if (typeof value === 'object' && value !== null && 'type' in value) {
@@ -208,6 +214,13 @@ export function searchTree(tree: FileNode | FileMetadata, query: string, options
   const results: string[] = [];
   const queryLower = query.toLowerCase();
 
+  /**
+   * Recursively traverse the directory tree to find matching files
+   * 
+   * @param node - The current node in the tree (file or directory)
+   * @param currentPath - The path to the current node
+   * @private
+   */
   function traverse(node: FileNode | FileMetadata, currentPath: string) {
     for (const [name, value] of Object.entries(node)) {
       const fullPath = join(currentPath, name);

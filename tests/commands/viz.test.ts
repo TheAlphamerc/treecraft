@@ -36,6 +36,26 @@ describe('viz command', () => {
     }
   });
 
+  it('rejects invalid mode', () => {
+    try {
+      execSync(`node dist/index.js viz ${testDir} -m invalid-mode`, { encoding: 'utf-8' });
+      throw new Error('Command should have failed');
+    } catch (err) {
+      expect((err as ExecException).message).toContain('ValidationError');
+      expect((err as ExecException).message).toContain('Invalid mode');
+    }
+  });
+
+  it('rejects invalid export format', () => {
+    try {
+      execSync(`node dist/index.js viz ${testDir} -x invalid-format`, { encoding: 'utf-8' });
+      throw new Error('Command should have failed');
+    } catch (err) {
+      expect((err as ExecException).message).toContain('ValidationError');
+      expect((err as ExecException).message).toContain('Invalid export format');
+    }
+  });
+
   it('includes metadata when requested', () => {
     const output = execSync(`node dist/index.js viz ${testDir} -w`, { encoding: 'utf-8' });
     expect(output).toContain('F,'); // File indicator

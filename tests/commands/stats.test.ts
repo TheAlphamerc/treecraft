@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { join } from 'path';
 import { mkdirSync, writeFileSync, readdirSync, rmSync, readFileSync } from 'fs';
 import { baseTestDir } from '../setup';
+import { ExecException } from 'child_process';
 
 describe('stats command', () => {
   const testDir = join(baseTestDir, 'stats');
@@ -49,6 +50,35 @@ describe('stats command', () => {
     expect(content).toHaveProperty('files', 3);
     expect(content).toHaveProperty('dirs', 1);
     expect(content).toHaveProperty('totalSize');
+  });
+
+  it('exports as YAML', () => {
+    const outFile = join(testDir, 'stats.yaml');
+    execSync(`node dist/index.js stats ${testDir} -x yaml > ${outFile}`, { encoding: 'utf-8' });
+    const content = readFileSync(outFile, 'utf-8');
+    expect(content).toContain('files:'); // YAML format
+    expect(content).toContain('dirs:');
+    expect(content).toContain('totalSize:');
+  });
+
+  it('rejects invalid export format', () => {
+    try {
+      execSync(`node dist/index.js stats ${testDir} -x invalid-format`, { encoding: 'utf-8' });
+      throw new Error('Command should have failed');
+    } catch (err) {
+      expect((err as ExecException).message).toContain('ValidationError');
+      expect((err as ExecException).message).toContain('Invalid export format');
+    }
+  });
+
+  it('rejects invalid sort option', () => {
+    try {
+      execSync(`node dist/index.js stats ${testDir} -s -r invalid-sort`, { encoding: 'utf-8' });
+      throw new Error('Command should have failed');
+    } catch (err) {
+      expect((err as ExecException).message).toContain('ValidationError');
+      expect((err as ExecException).message).toContain('Invalid sort option');
+    }
   });
 
   it('sorts size distribution by size', () => {

@@ -29,17 +29,22 @@ export const searchCommand = new Command()
     // Validate directory exists
     validateDirectory(path);
 
-    // Build tree with minimal metadata unless content search is needed
-    const tree = buildTree(path, {
-      depth: options.depth || Infinity,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-    });
-
     // Validate query
     if (!query || query.trim() === '') {
       throw new ValidationError('Search query cannot be empty');
     }
+
+    // Validate export format if provided
+    if (options.export && !['text', 'json', 'yaml'].includes(options.export)) {
+      throw new ValidationError(`Invalid export format: '${options.export}'. Use 'text', 'json', or 'yaml'.`);
+    }
+
+    // Build tree with minimal metadata unless content search is needed
+    const tree = buildTree(path, {
+      depth: options.depth ? Number(options.depth) : Infinity,
+      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+    });
 
     const results = searchTree(tree, query, {
       ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts

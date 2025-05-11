@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { buildTree, computeStats } from '../lib/fs-utils';
 import { formatStats } from '../lib/formatters';
-import { withErrorHandling, validateDirectory } from '../lib/errors';
+import { withErrorHandling, validateDirectory, ValidationError } from '../lib/errors';
 
 /**
  * Command for analyzing and displaying directory statistics
@@ -26,6 +26,16 @@ export const statsCommand = new Command()
   .action(withErrorHandling((path, options) => {
     // Validate that the path is a directory
     validateDirectory(path);
+
+    // Validate export format if provided
+    if (options.export && !['text', 'json', 'yaml'].includes(options.export)) {
+      throw new ValidationError(`Invalid export format: '${options.export}'. Use 'text', 'json', or 'yaml'.`);
+    }
+
+    // Validate sort option if provided
+    if (options.sort && !['size', 'count'].includes(options.sort)) {
+      throw new ValidationError(`Invalid sort option: '${options.sort}'. Use 'size' or 'count'.`);
+    }
 
     const tree = buildTree(path, {
       withMetadata: true,

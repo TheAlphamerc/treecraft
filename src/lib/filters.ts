@@ -5,9 +5,23 @@ import { FileMetadata, FileNode } from '../types';
  * 
  * @param item - The file or directory name to check
  * @param filterPatterns - Array of patterns to match against
- *   - "*.ext" matches files with the given extension
- *   - "name" matches exact name
- *   - "prefix" matches items starting with prefix
+ *   - "*.ext" matches files with the given extension (e.g., "*.ts" matches "file.ts")
+ *   - "name" matches exact name (e.g., "README.md" matches only "README.md")
+ *   - "prefix" matches items starting with prefix (e.g., "test" matches "test_file.js", "testing.ts")
+ * 
+ * @example
+ * // Match TypeScript files
+ * matchesFilters("file.ts", ["*.ts"]) // returns true
+ * matchesFilters("file.js", ["*.ts"]) // returns false
+ * 
+ * @example
+ * // Match exact name
+ * matchesFilters("package.json", ["package.json"]) // returns true
+ * 
+ * @example
+ * // Match by prefix
+ * matchesFilters("test_file.js", ["test"]) // returns true
+ * 
  * @returns True if the item matches any pattern or if no patterns are provided
  */
 export function matchesFilters(item: string, filterPatterns: string[]): boolean {
