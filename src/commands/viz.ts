@@ -5,6 +5,14 @@ import { formatTree } from '../lib/formatters';
 import { buildTree } from '../lib/fs-utils';
 import { FileMetadata, FileNode } from '../types';
 
+/**
+ * Command for visualizing directory structures
+ * 
+ * This command recursively explores a directory and displays its structure
+ * in various formats including tree, list, graph, or interactive modes.
+ * 
+ * Usage: treecraft viz [path] [options]
+ */
 export const vizCommand = new Command()
   .name('viz')
   .description('Visualize directory structure')
@@ -68,7 +76,16 @@ export const vizCommand = new Command()
       process.exit(1);
     }
   });
-// Stub for list mode (pending full implementation)
+
+/**
+ * Formats a directory tree as a flat list
+ * 
+ * This is a simplified implementation of the list mode that flattens
+ * the directory structure into a list of paths.
+ * 
+ * @param tree - The directory tree to format
+ * @returns A string with each path on a new line
+ */
 function formatList(tree: FileNode): string {
   const lines: string[] = [];
   const flatten = (node: FileNode | FileMetadata, prefix = '') => {

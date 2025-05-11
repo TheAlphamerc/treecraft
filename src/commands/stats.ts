@@ -4,6 +4,15 @@ import { buildTree, computeStats } from '../lib/fs-utils';
 import { formatStats } from '../lib/formatters';
 import chalk from 'chalk';
 
+/**
+ * Command for analyzing and displaying directory statistics
+ * 
+ * This command calculates and displays statistics about a directory,
+ * including file and directory counts, total size, size distribution,
+ * and file type breakdown.
+ * 
+ * Usage: treecraft stats [path] [options]
+ */
 export const statsCommand = new Command()
   .name('stats')
   .description('Display directory statistics')

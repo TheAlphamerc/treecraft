@@ -1,3 +1,17 @@
+/**
+ * TreeCraft - A powerful CLI tool for directory visualization and management
+ * 
+ * TreeCraft provides several commands for working with directory structures:
+ * 
+ * - viz: Visualize directory structures in various formats
+ * - gen: Generate directory structures from specification files
+ * - stats: Display statistics about directory contents
+ * - search: Find files by name or content
+ * 
+ * @version 0.0.2
+ * @author TheAlphamerc <sonu.sharma045@gmail.com>
+ * @license ISC
+ */
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { vizCommand } from './commands/viz';

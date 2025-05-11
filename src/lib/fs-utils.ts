@@ -5,10 +5,15 @@ import { filterTree } from './filters';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 /**
- * File system utilities for traversal.
- * @param dir Directory to traverse
- * @param options Traversal options
- * @returns Directory tree
+ * Recursively builds a directory tree structure
+ * 
+ * @param dir - The directory path to traverse
+ * @param options - Configuration options
+ * @param options.depth - Maximum depth to traverse (default: Infinity)
+ * @param options.exclude - Patterns to exclude from the tree
+ * @param options.filter - Patterns to include in the tree
+ * @param options.withMetadata - Whether to include file metadata (size, modified time)
+ * @returns A tree representing the directory structure
  */
 export function buildTree(dir: string, options: {
   depth?: number;
@@ -64,9 +69,10 @@ export function buildTree(dir: string, options: {
 }
 
 /**
- * Count the number of files in a directory tree
- * @param tree Directory tree
- * @returns Number of files
+ * Counts the total number of files in a directory tree
+ * 
+ * @param tree - The directory tree to analyze
+ * @returns The total count of files
  */
 export function countFiles(tree: FileNode | FileMetadata | null): number {
   if (!tree || tree === null) return 0;
@@ -75,15 +81,27 @@ export function countFiles(tree: FileNode | FileMetadata | null): number {
 }
 
 /**
- * Calculate the total size of files in a directory tree
- * @param tree Directory tree
- * @returns Total size in bytes
+ * Calculates the total size of all files in a directory tree
+ * 
+ * @param tree - The directory tree to analyze
+ * @returns The total size in bytes
  */
 export function calcTotalSize(tree: FileNode | FileMetadata | null): number {
   if (!tree || tree === null) return 0;
   if (typeof tree === 'string') return 1;
   return Object.values(tree).reduce((acc, val) => acc + (typeof val === 'object' ? calcTotalSize(val) : 0), 0);
 }
+
+/**
+ * Generates a directory structure from a specification
+ * 
+ * @param spec - The specification of the directory structure to create
+ * @param output - The output directory where the structure will be created
+ * @param options - Configuration options
+ * @param options.skipAll - Skip creation if files/directories already exist
+ * @param options.overwriteAll - Overwrite files/directories if they already exist
+ * @throws Will throw an error if a conflict is found and no resolution option is provided
+ */
 export function generateStructure(spec: FileNode | FileMetadata, output: string, options: {
   skipAll?: boolean;
   overwriteAll?: boolean;
@@ -100,8 +118,7 @@ export function generateStructure(spec: FileNode | FileMetadata, output: string,
       if (existsSync(fullPath)) {
         if (options.skipAll) continue;
         if (!options.overwriteAll) {
-          console.error(`Directory '${fullPath}' exists and no conflict flag provided`);
-          process.exit(1);
+          throw new Error(`Directory '${fullPath}' exists and no conflict flag provided`);
         }
       }
       mkdirSync(fullPath, { recursive: true });
@@ -112,8 +129,7 @@ export function generateStructure(spec: FileNode | FileMetadata, output: string,
       if (existsSync(fullPath)) {
         if (options.skipAll) continue;
         if (!options.overwriteAll) {
-          console.error(`File '${fullPath}' exists and no conflict flag provided`);
-          process.exit(1);
+          throw new Error(`File '${fullPath}' exists and no conflict flag provided`);
         }
       }
       const fileContent = content !== null ? content : '';
@@ -122,6 +138,16 @@ export function generateStructure(spec: FileNode | FileMetadata, output: string,
   }
 }
 
+/**
+ * Computes statistics about a directory tree
+ * 
+ * @param tree - The directory tree to analyze
+ * @param options - Configuration options
+ * @param options.sizeDist - Whether to include size distribution statistics
+ * @param options.fileTypes - Whether to include file type breakdown
+ * @param options.sort - How to sort size distribution (by size or count)
+ * @returns Statistics about the directory tree
+ */
 export function computeStats(tree: FileNode | FileMetadata, options: {
   sizeDist?: boolean;
   fileTypes?: boolean;
@@ -165,6 +191,16 @@ export function computeStats(tree: FileNode | FileMetadata, options: {
   return { files, dirs, totalSize, sizeDist, fileTypes };
 }
 
+/**
+ * Searches a directory tree for files matching a query
+ * 
+ * @param tree - The directory tree to search
+ * @param query - The search term to look for in filenames
+ * @param options - Search options
+ * @param options.ext - Filter results by file extension (e.g. '.ts')
+ * @param options.basePath - The base path to use when returning results
+ * @returns An array of file paths that match the search criteria
+ */
 export function searchTree(tree: FileNode | FileMetadata, query: string, options: {
   ext?: string;
   basePath: string

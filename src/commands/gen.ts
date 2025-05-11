@@ -6,6 +6,15 @@ import { generateStructure } from '../lib/fs-utils';
 import { parseTextTree } from '../lib/parser';
 import { FileNode } from '../types';
 
+/**
+ * Command for generating directory structures from specification files
+ * 
+ * This command creates directories and files based on a specification file
+ * in JSON, YAML, or text tree format. It can handle conflicts by skipping
+ * or overwriting existing files and directories.
+ * 
+ * Usage: treecraft gen <input> -o <output> [options]
+ */
 export const genCommand = new Command()
   .name('gen')
   .description('Generate directory structure from an input file')

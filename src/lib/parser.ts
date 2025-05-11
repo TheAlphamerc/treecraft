@@ -3,6 +3,13 @@ import { FileNode } from '../types';
 import { EOL } from 'os';
 import { load } from 'js-yaml';
 
+/**
+ * Parses a JSON string into a FileNode structure
+ * 
+ * @param content - JSON string to parse
+ * @returns The parsed FileNode structure
+ * @throws Error if the JSON is invalid
+ */
 export function parseJsonTree(content: string): FileNode {
   try {
     return JSON.parse(content);
@@ -11,6 +18,13 @@ export function parseJsonTree(content: string): FileNode {
   }
 }
 
+/**
+ * Parses a YAML string into a FileNode structure
+ * 
+ * @param content - YAML string to parse
+ * @returns The parsed FileNode structure
+ * @throws Error if the YAML is invalid
+ */
 export function parseYamlTree(content: string): FileNode {
   try {
     return load(content) as FileNode;
@@ -19,6 +33,24 @@ export function parseYamlTree(content: string): FileNode {
   }
 }
 
+/**
+ * Parses a text-based ASCII tree into a FileNode structure
+ * 
+ * The tree must be in the standard format with '├──' or '└──' prefixes
+ * and proper indentation to indicate hierarchy.
+ * 
+ * Example:
+ * ```
+ * src
+ * ├── lib
+ * │   └── utils.js
+ * └── index.js
+ * ```
+ * 
+ * @param text - ASCII tree text to parse
+ * @returns The parsed FileNode structure
+ * @throws Error if the tree structure is invalid
+ */
 export function parseTextTree(text: string): FileNode {
   const lines = text.split(EOL).filter(line => line.trim());
   const tree: FileNode = {};

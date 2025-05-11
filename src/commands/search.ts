@@ -5,6 +5,15 @@ import { FileMetadata, FileNode } from '../types';
 import { statSync } from 'fs';
 import chalk from 'chalk';
 
+/**
+ * Command for searching files by name in a directory
+ * 
+ * This command searches for files matching a query string in their names
+ * within a directory structure. Results can be filtered by extension,
+ * limited by depth, and exported in various formats.
+ * 
+ * Usage: treecraft search [path] <query> [options]
+ */
 export const searchCommand = new Command()
   .name('search')
   .description('Search files by name or content')

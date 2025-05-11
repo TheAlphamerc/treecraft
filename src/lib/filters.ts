@@ -1,7 +1,14 @@
 import { FileMetadata, FileNode } from '../types';
 
 /**
- * checks each item (file or directory) at its current level against the filter patterns
+ * Checks if an item name matches any of the provided filter patterns
+ * 
+ * @param item - The file or directory name to check
+ * @param filterPatterns - Array of patterns to match against
+ *   - "*.ext" matches files with the given extension
+ *   - "name" matches exact name
+ *   - "prefix" matches items starting with prefix
+ * @returns True if the item matches any pattern or if no patterns are provided
  */
 export function matchesFilters(item: string, filterPatterns: string[]): boolean {
   if (filterPatterns.length === 0) {
@@ -16,9 +23,16 @@ export function matchesFilters(item: string, filterPatterns: string[]): boolean 
 }
 
 /**
- * Recursively traverses the tree.
- * Includes a file if it matches a filter pattern (e.g., *.ts).
- * Includes a directory if it matches OR if any of its descendants match, preserving the hierarchy.
+ * Filters a directory tree based on the provided patterns
+ * 
+ * This function recursively traverses the tree and:
+ * - Includes a file if it matches a filter pattern (e.g., *.ts)
+ * - Includes a directory if it matches OR if any of its descendants match
+ * - Preserves the hierarchy of matched items
+ * 
+ * @param tree - The directory tree to filter
+ * @param filterPatterns - Array of patterns to filter with
+ * @returns A new tree containing only the items that match the filter criteria
  */
 export function filterTree(tree: FileNode | FileMetadata, filterPatterns: string[]): FileNode {
   const filtered: FileNode = {};
