@@ -2,6 +2,8 @@
 
 A powerful CLI for directory visualization, generation, and analysis, designed for developers and testers.
 
+> **For complete documentation with all options and detailed examples, see [DOCUMENTATION.md](DOCUMENTATION.md)**
+
 ## Installation
 
 ```bash
@@ -203,6 +205,10 @@ TreeCraft provides detailed error messages for various scenarios:
 - Permission issues
 - Format validation errors
 - Input/output conflicts
+
+## Documentation
+
+For complete documentation of all features, options, and advanced usage examples, refer to [DOCUMENTATION.md](DOCUMENTATION.md).
 
 ## Contributing
 
