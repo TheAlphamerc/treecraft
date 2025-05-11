@@ -111,6 +111,131 @@ describe('fs-utils', () => {
         'file.js': null
       });
     });
+
+    it('handles extremely deep nested structures with multiple branches', () => {
+      // Mock a complex directory structure with multiple branches and depth
+      (readdirSync as jest.Mock).mockImplementation((path) => {
+        if (path === testDir) return ['branch1', 'branch2', 'file.txt'];
+        if (path === join(testDir, 'branch1')) return ['sub1', 'sub2'];
+        if (path === join(testDir, 'branch2')) return ['sub3', 'sub4'];
+        if (path === join(testDir, 'branch1', 'sub1')) return ['subsub1', 'file1.txt'];
+        if (path === join(testDir, 'branch1', 'sub2')) return ['file2.txt'];
+        if (path === join(testDir, 'branch2', 'sub3')) return ['subsub2', 'file3.txt'];
+        if (path === join(testDir, 'branch2', 'sub4')) return ['subsub3', 'file4.txt'];
+        if (path === join(testDir, 'branch1', 'sub1', 'subsub1')) return ['deep.txt'];
+        if (path === join(testDir, 'branch2', 'sub3', 'subsub2')) return ['deep.txt'];
+        if (path === join(testDir, 'branch2', 'sub4', 'subsub3')) return ['deep.txt'];
+        return [];
+      });
+
+      (statSync as jest.Mock).mockImplementation((path) => ({
+        isDirectory: () => !path.endsWith('.txt'),
+        size: 10,
+        mtime: new Date('2023-01-01'),
+      }));
+
+      // Test with unlimited depth
+      const tree = buildTree(testDir, {});
+
+      // Verify the structure matches what we expect
+      expect(tree).toEqual({
+        'branch1': {
+          'sub1': {
+            'subsub1': {
+              'deep.txt': null
+            },
+            'file1.txt': null
+          },
+          'sub2': {
+            'file2.txt': null
+          }
+        },
+        'branch2': {
+          'sub3': {
+            'subsub2': {
+              'deep.txt': null
+            },
+            'file3.txt': null
+          },
+          'sub4': {
+            'subsub3': {
+              'deep.txt': null
+            },
+            'file4.txt': null
+          }
+        },
+        'file.txt': null
+      });
+
+      // Test with depth limit of 2
+      const limitedTree = buildTree(testDir, { depth: 2 });
+      expect(limitedTree).toEqual({
+        'branch1': {
+          'sub1': {},
+          'sub2': {}
+        },
+        'branch2': {
+          'sub3': {},
+          'sub4': {}
+        },
+        'file.txt': null
+      });
+    });
+
+    it('handles boundary depth limit values', () => {
+      // Setup a simple directory structure
+      (readdirSync as jest.Mock).mockImplementation((path) => {
+        if (path === testDir) return ['dir1', 'file1.txt'];
+        if (path === join(testDir, 'dir1')) return ['dir2', 'file2.txt'];
+        if (path === join(testDir, 'dir1', 'dir2')) return ['file3.txt'];
+        return [];
+      });
+
+      (statSync as jest.Mock).mockImplementation((path) => ({
+        isDirectory: () => !path.endsWith('.txt'),
+        size: 10,
+        mtime: new Date('2023-01-01'),
+      }));
+
+      // Test with depth 0 (should return empty object)
+      const tree0 = buildTree(testDir, { depth: 0 });
+      expect(tree0).toEqual({});
+
+      // Test with negative depth (should be treated as 0)
+      const treeNegative = buildTree(testDir, { depth: -5 });
+      expect(treeNegative).toEqual({});
+
+      // Test with depth 1
+      const tree1 = buildTree(testDir, { depth: 1 });
+      expect(tree1).toEqual({
+        'dir1': {},
+        'file1.txt': null
+      });
+
+      // Test with extremely large depth (should function like unlimited)
+      const treeLarge = buildTree(testDir, { depth: 1000 });
+      expect(treeLarge).toEqual({
+        'dir1': {
+          'dir2': {
+            'file3.txt': null
+          },
+          'file2.txt': null
+        },
+        'file1.txt': null
+      });
+
+      // Test with undefined depth (should be unlimited)
+      const treeUndefined = buildTree(testDir, {});
+      expect(treeUndefined).toEqual({
+        'dir1': {
+          'dir2': {
+            'file3.txt': null
+          },
+          'file2.txt': null
+        },
+        'file1.txt': null
+      });
+    });
   });
 
   describe('generateStructure', () => {
@@ -227,6 +352,39 @@ describe('fs-utils', () => {
       };
       const results = searchTree(tree, 'file', { basePath: testDir });
       expect(results).toEqual([]);  // Should not match directory names
+    });
+
+    it('handles paths with special characters', () => {
+      const tree: FileNode = {
+        'file with spaces.txt': null,
+        'special_chars!@#$.txt': null,
+        'folder with spaces': {
+          'nested file.txt': null
+        },
+        'international_Привет_你好.txt': null,
+        'path/with/slashes.txt': null
+      };
+
+      // Test searching by part of names with spaces
+      const results1 = searchTree(tree, 'spaces', { basePath: testDir });
+      expect(results1).toContain(join(testDir, 'file with spaces.txt'));
+      expect(results1).not.toContain(join(testDir, 'folder with spaces'));
+
+      // Test searching by special characters
+      const results2 = searchTree(tree, 'special', { basePath: testDir });
+      expect(results2).toContain(join(testDir, 'special_chars!@#$.txt'));
+
+      // Test searching in nested folders with spaces
+      const results3 = searchTree(tree, 'nested', { basePath: testDir });
+      expect(results3).toContain(join(testDir, 'folder with spaces', 'nested file.txt'));
+
+      // Test searching with international characters
+      const results4 = searchTree(tree, 'Привет', { basePath: testDir });
+      expect(results4).toContain(join(testDir, 'international_Привет_你好.txt'));
+
+      // Test searching with forward slashes in filenames
+      const results5 = searchTree(tree, 'slashes', { basePath: testDir });
+      expect(results5).toContain(join(testDir, 'path/with/slashes.txt'));
     });
   });
 });
