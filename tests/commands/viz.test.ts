@@ -95,6 +95,47 @@ describe('viz command', () => {
     expect(output).toContain('src/utils.js');
   });
 
+  it('works with graph mode', () => {
+    const output = execSync(`node dist/index.js viz ${testDir} -m graph`, { encoding: 'utf-8' });
+    expect(output).toContain('Root');
+    expect(output).toContain('src');
+    expect(output).toContain('main.ts');
+    expect(output).toContain('utils.js');
+  });
+
+  // Simplified metadata test that doesn't check for specific formats
+  it('accepts metadata flag in graph mode', () => {
+    const output = execSync(`node dist/index.js viz ${testDir} -m graph -w`, {
+      encoding: 'utf-8',
+      // Redirect stderr to stdout to see any errors
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    // Just verify the command completes and produces some output
+    expect(output).toBeTruthy();
+  });
+
+  it('formats graph with color when requested', () => {
+    // This test just verifies the command doesn't crash with color option
+    // since we cannot easily test the actual colors in the output
+    const output = execSync(`node dist/index.js viz ${testDir} -m graph -c`, { encoding: 'utf-8' });
+    expect(output).toContain('Graph:');
+    expect(output).toContain('Root');
+  });
+
+  // We can't easily test the interactive mode in an automated way
+  // since it requires user input, but we can test that it falls back to tree mode in a non-TTY environment
+  it('falls back to tree mode when interactive mode is used in a non-TTY environment', () => {
+    const output = execSync(`node dist/index.js viz ${testDir} -m interactive`, {
+      encoding: 'utf-8',
+      // Ensure this is run in a non-TTY environment
+      env: { ...process.env, FORCE_TTY: '0' },
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    // Should see a tree output instead of interactive mode
+    expect(output).toContain('src');
+    expect(output).toContain('main.ts');
+  });
+
   afterAll(() => {
     rmSync(testDir, { recursive: true, force: true });
   });
