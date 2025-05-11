@@ -33,13 +33,12 @@ treecraft viz . -d 1 -e "dist"  # Limit depth, exclude dist
 Generate directory from a spec file (JSON, YAML, or text tree).
 
 - `-o, --output <path>`: Output directory (required)
-- `-r, --random <size>`: Random content (e.g., "10kb", "1mb")
 - `-s, --skip-all`: Skip existing files/dirs
 - `-w, --overwrite-all`: Overwrite existing files/dirs
 
 **Example:**
 ```bash
-treecraft gen spec.json -o ./project -r 5kb  # Generate with random content
+treecraft gen spec.json -o ./project 
 ```
 
 ### `stats [path]`

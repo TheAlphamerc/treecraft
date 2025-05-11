@@ -10,7 +10,9 @@ export const searchCommand = new Command()
   .description('Search files by name or content')
   .argument('[path]', 'Directory to search', '.')
   .argument('<query>', 'Search term')
-  .option('-e <pattern>', 'Limit to extensions (e.g., *.ts)')
+  .option('-f, --filter <patterns>', 'Include only patterns (e.g. *.ts, *.js)')
+  .option('-d, --depth <n>', 'Limit tree depth')
+  .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
   .option('-x, --export <format>', 'Export format (text, json, yaml)')
   .action((path, query, options) => {
     try {
@@ -24,7 +26,11 @@ export const searchCommand = new Command()
     }
 
     // Build tree with minimal metadata unless content search is needed
-    const tree = buildTree(path, {});
+    const tree = buildTree(path, {
+      depth: options.depth || Infinity,
+      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+    });
     const results = searchTree(tree, query, {
       ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts
       basePath: path,
