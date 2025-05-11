@@ -1,7 +1,20 @@
 import { Command } from 'commander';
 import { buildTree, computeStats } from '../lib/fs-utils';
 import { formatStats } from '../lib/formatters';
-import { withErrorHandling, validateDirectory, ValidationError } from '../lib/errors';
+import { withErrorHandling, validateDirectory, ValidationError, IOError } from '../lib/errors';
+import { validateExportFormat, validateSortOption, processPatterns, getDepthValue } from '../lib/option-utils';
+import {
+  depthOption,
+  excludeOption,
+  filterOption,
+  exportOption,
+  outputFileOption,
+  sortOption,
+  sizeDistOption,
+  fileTypesOption
+} from '../lib/common-options';
+import { writeFileSync } from 'fs';
+import chalk from 'chalk';
 
 /**
  * Command for analyzing and displaying directory statistics
@@ -16,31 +29,28 @@ export const statsCommand = new Command()
   .name('stats')
   .description('Display directory statistics')
   .argument('[path]', 'Directory to analyze', '.')
-  .option('-s, --size-dist', 'Show size distribution')
-  .option('-x, --export <format>', 'Export format (text, json, yaml)')
-  .option('-f, --filter <patterns>', 'Include only patterns (comma-separated)')
-  .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
-  .option('-d, --depth <n>', 'Limit stats to depth', parseInt)
-  .option('-t, --file-types', 'Show file type breakdown')
-  .option('-r, --sort <key>', 'Sort size distribution (size, count)', 'count')
+  .addOption(sizeDistOption)
+  .addOption(exportOption)
+  .addOption(filterOption)
+  .addOption(excludeOption)
+  .addOption(depthOption)
+  .addOption(fileTypesOption)
+  .addOption(sortOption)
+  .addOption(outputFileOption)
   .action(withErrorHandling((path, options) => {
     // Validate that the path is a directory
     validateDirectory(path);
 
     // Validate export format if provided
-    if (options.export && !['text', 'json', 'yaml'].includes(options.export)) {
-      throw new ValidationError(`Invalid export format: '${options.export}'. Use 'text', 'json', or 'yaml'.`);
-    }
+    validateExportFormat(options.export);
 
     // Validate sort option if provided
-    if (options.sort && !['size', 'count'].includes(options.sort)) {
-      throw new ValidationError(`Invalid sort option: '${options.sort}'. Use 'size' or 'count'.`);
-    }
+    validateSortOption(options.sort);
 
     const tree = buildTree(path, {
       withMetadata: true,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+      filter: processPatterns(options.filter),
+      exclude: processPatterns(options.exclude),
       depth: options.depth,
     });
 
@@ -51,5 +61,16 @@ export const statsCommand = new Command()
     });
 
     const output = formatStats(stats, options);
-    console.log(output);
+
+    // Handle output to file if specified
+    if (options.outputFile) {
+      try {
+        writeFileSync(options.outputFile, output, 'utf-8');
+        console.log(chalk.blue(`Exported to ${options.outputFile}`));
+      } catch (err: any) {
+        throw new IOError(`Failed to write to output file: ${err.message}`, err);
+      }
+    } else {
+      console.log(output);
+    }
   }));

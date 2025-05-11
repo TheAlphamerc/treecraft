@@ -5,6 +5,17 @@ import { formatTree } from '../lib/formatters';
 import { buildTree } from '../lib/fs-utils';
 import { FileMetadata, FileNode } from '../types';
 import { withErrorHandling, validateDirectory, ValidationError, IOError } from '../lib/errors';
+import { validateExportFormat, validateTreeMode, processPatterns, getDepthValue } from '../lib/option-utils';
+import {
+  depthOption,
+  excludeOption,
+  filterOption,
+  exportOption,
+  outputFileOption,
+  colorOption,
+  metadataOption,
+  modeOption
+} from '../lib/common-options';
 import inquirer from 'inquirer';
 import { join, dirname, basename } from 'path';
 
@@ -20,34 +31,29 @@ export const vizCommand = new Command()
   .name('viz')
   .description('Visualize directory structure')
   .argument('[path]', 'Directory to visualize/export', '.')
-  .option('-m, --mode <mode>', 'Visualization mode (tree, graph, list, interactive)', 'tree')
-  .option('-d, --depth <n>', 'Limit tree depth', parseInt)
-  .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
-  .option('-f, --filter <patterns>', 'Include only patterns (comma-separated)')
-  .option('-c, --color', 'Enable colored output')
-  .option('-x, --export <format>', 'Export format (text, json, yaml)')
-  .option('-w, --with-metadata', 'Include metadata (size, modified time) in output')
-  .option('-o, --output-file <file>', 'Write output to file')
+  .addOption(modeOption)
+  .addOption(depthOption)
+  .addOption(excludeOption)
+  .addOption(filterOption)
+  .addOption(colorOption)
+  .addOption(exportOption)
+  .addOption(metadataOption)
+  .addOption(outputFileOption)
   .action(withErrorHandling(async (path, options) => {
     // Validate that the path is a directory
     validateDirectory(path);
 
-    // Validate mode option
-    const validModes = ['tree', 'graph', 'list', 'interactive'];
-    if (options.mode && !validModes.includes(options.mode)) {
-      throw new ValidationError(`Invalid mode: '${options.mode}'. Valid modes are: ${validModes.join(', ')}`);
-    }
+    // Validate mode option using shared utility
+    validateTreeMode(options.mode);
 
-    // Validate export format if provided
-    if (options.export && !['text', 'json', 'yaml'].includes(options.export)) {
-      throw new ValidationError(`Invalid export format: '${options.export}'. Use 'text', 'json', or 'yaml'.`);
-    }
+    // Validate export format if provided using shared utility
+    validateExportFormat(options.export);
 
     const tree = buildTree(path, {
-      depth: options.depth || Infinity,
+      depth: getDepthValue(options.depth),
       withMetadata: options.withMetadata,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+      filter: processPatterns(options.filter),
+      exclude: processPatterns(options.exclude),
     });
 
     // If we're in interactive mode, handle it differently

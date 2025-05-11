@@ -41,8 +41,7 @@ describe('viz command', () => {
       execSync(`node dist/index.js viz ${testDir} -m invalid-mode`, { encoding: 'utf-8' });
       throw new Error('Command should have failed');
     } catch (err) {
-      expect((err as ExecException).message).toContain('ValidationError');
-      expect((err as ExecException).message).toContain('Invalid mode');
+      expect((err as ExecException).message).toContain("error: option '-m, --mode <mode>' argument 'invalid-mode' is invalid");
     }
   });
 
@@ -51,13 +50,12 @@ describe('viz command', () => {
       execSync(`node dist/index.js viz ${testDir} -x invalid-format`, { encoding: 'utf-8' });
       throw new Error('Command should have failed');
     } catch (err) {
-      expect((err as ExecException).message).toContain('ValidationError');
-      expect((err as ExecException).message).toContain('Invalid export format');
+      expect((err as ExecException).message).toContain("error: option '-x, --export <format>' argument 'invalid-format' is invalid");
     }
   });
 
   it('includes metadata when requested', () => {
-    const output = execSync(`node dist/index.js viz ${testDir} -w`, { encoding: 'utf-8' });
+    const output = execSync(`node dist/index.js viz ${testDir} --with-metadata`, { encoding: 'utf-8' });
     expect(output).toContain('F,'); // File indicator
     expect(output).toContain('B'); // Size in bytes
   });
@@ -105,7 +103,7 @@ describe('viz command', () => {
 
   // Simplified metadata test that doesn't check for specific formats
   it('accepts metadata flag in graph mode', () => {
-    const output = execSync(`node dist/index.js viz ${testDir} -m graph -w`, {
+    const output = execSync(`node dist/index.js viz ${testDir} -m graph --with-metadata`, {
       encoding: 'utf-8',
       // Redirect stderr to stdout to see any errors
       stdio: ['pipe', 'pipe', 'pipe']

@@ -21,7 +21,7 @@ describe('search command', () => {
   });
 
   it('filters by extension', () => {
-    const output = execSync(`node dist/index.js search ${testDir} .js -t ".js"`, { encoding: 'utf-8' });
+    const output = execSync(`node dist/index.js search ${testDir} .js --ext ".js"`, { encoding: 'utf-8' });
     expect(output).toContain(join(testDir, 'src', 'utils.js'));
     expect(output).not.toContain('main.ts');
   });
@@ -31,8 +31,7 @@ describe('search command', () => {
       execSync(`node dist/index.js search ${testDir} test -x invalid-format`, { encoding: 'utf-8' });
       throw new Error('Command should have failed');
     } catch (err) {
-      expect((err as ExecException).message).toContain('ValidationError');
-      expect((err as ExecException).message).toContain('Invalid export format');
+      expect((err as ExecException).message).toContain("error: option '-x, --export <format>' argument 'invalid-format' is invalid");
     }
   });
 

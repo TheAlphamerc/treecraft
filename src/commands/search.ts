@@ -5,6 +5,14 @@ import { FileMetadata, FileNode } from '../types';
 import { statSync } from 'fs';
 import chalk from 'chalk';
 import { withErrorHandling, validateDirectory, ValidationError } from '../lib/errors';
+import { validateExportFormat, processPatterns, getDepthValue } from '../lib/option-utils';
+import {
+  depthOption,
+  excludeOption,
+  filterOption,
+  exportOption,
+  extensionOption
+} from '../lib/common-options';
 
 /**
  * Command for searching files by name in a directory
@@ -20,11 +28,11 @@ export const searchCommand = new Command()
   .description('Search files by name or content')
   .argument('[path]', 'Directory to search', '.')
   .argument('<query>', 'Search term')
-  .option('-f, --filter <patterns>', 'Include only patterns (comma-separated)')
-  .option('-t, --ext <extension>', 'Filter by file extension (e.g. .ts, .js)')
-  .option('-d, --depth <n>', 'Limit tree depth')
-  .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
-  .option('-x, --export <format>', 'Export format (text, json, yaml)')
+  .addOption(filterOption)
+  .addOption(extensionOption)
+  .addOption(depthOption)
+  .addOption(excludeOption)
+  .addOption(exportOption)
   .action(withErrorHandling((path, query, options) => {
     // Validate directory exists
     validateDirectory(path);
@@ -35,15 +43,13 @@ export const searchCommand = new Command()
     }
 
     // Validate export format if provided
-    if (options.export && !['text', 'json', 'yaml'].includes(options.export)) {
-      throw new ValidationError(`Invalid export format: '${options.export}'. Use 'text', 'json', or 'yaml'.`);
-    }
+    validateExportFormat(options.export);
 
     // Build tree with minimal metadata unless content search is needed
     const tree = buildTree(path, {
-      depth: options.depth ? Number(options.depth) : Infinity,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+      depth: getDepthValue(options.depth),
+      filter: processPatterns(options.filter),
+      exclude: processPatterns(options.exclude),
     });
 
     const results = searchTree(tree, query, {

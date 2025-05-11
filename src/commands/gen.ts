@@ -14,7 +14,7 @@ import chalk from 'chalk';
  * in JSON, YAML, or text tree format. It can handle conflicts by skipping
  * or overwriting existing files and directories.
  * 
- * Usage: treecraft gen <input> -o <o> [options]
+ * Usage: treecraft gen <input> -o <output> [options]
  */
 export const genCommand = new Command()
   .name('gen')

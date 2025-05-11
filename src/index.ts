@@ -18,6 +18,7 @@ import { vizCommand } from './commands/viz';
 import { genCommand } from './commands/gen';
 import { statsCommand } from './commands/stats';
 import { searchCommand } from './commands/search';
+import { getDetailedHelp } from './lib/help';
 
 const program = new Command();
 
@@ -31,8 +32,17 @@ program.addCommand(genCommand);
 program.addCommand(statsCommand);
 program.addCommand(searchCommand);
 
+// Add a dedicated help command
+program
+  .command('help')
+  .description('Display detailed help information')
+  .action(() => {
+    console.log(getDetailedHelp());
+  });
+
 program.parse(process.argv);
 
+// Show help if no command was specified
 if (!process.argv.slice(2).length) {
-  program.outputHelp((txt) => chalk.green(txt));
+  console.log(getDetailedHelp());
 }

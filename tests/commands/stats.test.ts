@@ -66,8 +66,7 @@ describe('stats command', () => {
       execSync(`node dist/index.js stats ${testDir} -x invalid-format`, { encoding: 'utf-8' });
       throw new Error('Command should have failed');
     } catch (err) {
-      expect((err as ExecException).message).toContain('ValidationError');
-      expect((err as ExecException).message).toContain('Invalid export format');
+      expect((err as ExecException).message).toContain("error: option '-x, --export <format>' argument 'invalid-format' is invalid");
     }
   });
 
@@ -76,8 +75,7 @@ describe('stats command', () => {
       execSync(`node dist/index.js stats ${testDir} -s -r invalid-sort`, { encoding: 'utf-8' });
       throw new Error('Command should have failed');
     } catch (err) {
-      expect((err as ExecException).message).toContain('ValidationError');
-      expect((err as ExecException).message).toContain('Invalid sort option');
+      expect((err as ExecException).message).toContain("error: option '-r, --sort <key>' argument 'invalid-sort' is invalid");
     }
   });
 
@@ -97,6 +95,17 @@ describe('stats command', () => {
   it('respects filter patterns', () => {
     const output = execSync(`node dist/index.js stats ${testDir} -f "*.ts"`, { encoding: 'utf-8' });
     expect(output).toContain('Files: 1');  // Only main.ts
+  });
+
+  it('writes output to file with output-file option', () => {
+    const outFile = join(testDir, 'output-stats.txt');
+    execSync(`node dist/index.js stats ${testDir} -o ${outFile}`, { encoding: 'utf-8' });
+
+    // Verify file exists and contains stats
+    const content = readFileSync(outFile, 'utf-8');
+    expect(content).toContain('Files:');
+    expect(content).toContain('Dirs:');
+    expect(content).toContain('Total Size:');
   });
 
   afterAll(() => {
