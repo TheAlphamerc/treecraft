@@ -14,24 +14,15 @@ jest.mock('fs', () => ({
   readFileSync: jest.fn(),
 }));
 
-// Mock process.exit globally and ensure it throws
-const mockExit = jest.spyOn(process, 'exit').mockImplementation((code) => {
-  throw new Error(`process.exit called with code ${code}`);
-});
-
 describe('fs-utils', () => {
   const testDir = join(baseTestDir, 'fs-utils');
 
   beforeEach(() => {
-    jest.clearAllMocks(); // Clear mocks but keep mockExit intact
+    jest.clearAllMocks();
     (mkdirSync as jest.Mock).mockImplementation(() => { });
-    (existsSync as jest.Mock).mockReturnValue(false); // Default: files don’t exist
+    (existsSync as jest.Mock).mockReturnValue(false); // Default: files don't exist
     (writeFileSync as jest.Mock).mockImplementation(() => { });
     (readFileSync as jest.Mock).mockImplementation((path) => 'mocked content');
-  });
-
-  afterAll(() => {
-    mockExit.mockRestore(); // Clean up global mock
   });
 
   describe('buildTree', () => {
@@ -77,6 +68,49 @@ describe('fs-utils', () => {
         mtime: '2023-01-01T00:00:00.000Z',
       });
     });
+
+    it('handles empty directories', () => {
+      (readdirSync as jest.Mock).mockReturnValue([]);
+      const tree = buildTree(testDir, {});
+      expect(tree).toEqual({});
+    });
+
+    it('respects depth limit', () => {
+      (readdirSync as jest.Mock).mockImplementation((path) => {
+        if (path === testDir) return ['dir1'];
+        if (path === join(testDir, 'dir1')) return ['dir2'];
+        if (path === join(testDir, 'dir1', 'dir2')) return ['file.txt'];
+        return [];
+      });
+      (statSync as jest.Mock).mockImplementation((path) => ({
+        isDirectory: () => !path.endsWith('.txt'),
+        size: 0,
+        mtime: new Date('2023-01-01'),
+      }));
+
+      // Depth 1 should include only first level directory
+      const tree1 = buildTree(testDir, { depth: 1 });
+      expect(tree1).toEqual({ 'dir1': {} });
+
+      // Depth 2 should include first and second level
+      const tree2 = buildTree(testDir, { depth: 2 });
+      expect(tree2).toEqual({ 'dir1': { 'dir2': {} } });
+
+      // Depth 3 should include all levels
+      const tree3 = buildTree(testDir, { depth: 3 });
+      expect(tree3).toEqual({ 'dir1': { 'dir2': { 'file.txt': null } } });
+    });
+
+    it('handles edge case with exclusion patterns', () => {
+      (readdirSync as jest.Mock).mockReturnValue(['file.txt', 'file.js', 'node_modules']);
+      (statSync as jest.Mock).mockReturnValue({ isDirectory: () => false });
+
+      const tree = buildTree(testDir, { exclude: ['node_modules', '.git'] });
+      expect(tree).toEqual({
+        'file.txt': null,
+        'file.js': null
+      });
+    });
   });
 
   describe('generateStructure', () => {
@@ -106,10 +140,10 @@ describe('fs-utils', () => {
       expect(writeFileSync).toHaveBeenCalledWith(join(testDir, 'file.txt'), 'new', 'utf-8');
     });
 
-    it('handles existing file without overwrite or skip by throwing', () => {
+    it('throws error when trying to overwrite existing file without options', () => {
       (existsSync as jest.Mock).mockReturnValue(true); // File exists
       const tree: FileNode = { 'file.txt': 'new' };
-      expect(() => generateStructure(tree, testDir, {})).toThrow('process.exit called with code 1');
+      expect(() => generateStructure(tree, testDir, {})).toThrow("File '");
     });
   });
 
@@ -128,6 +162,29 @@ describe('fs-utils', () => {
       // Conditionally check optional fields
       if (stats.fileTypes) expect(stats.fileTypes).toEqual({ '.txt': 1, '.js': 1 });
       if (stats.sizeDist) expect(stats.sizeDist).toEqual({ '<1KB': 2, '1KB-1MB': 0, '>1MB': 0 });
+    });
+
+    it('handles empty tree', () => {
+      const stats = computeStats({});
+      expect(stats).toEqual({
+        files: 0,
+        dirs: 0,
+        totalSize: 0
+      });
+    });
+
+    it('properly calculates size distribution', () => {
+      const tree: FileNode = {
+        'small.txt': { type: 'file', size: 100, mtime: '2023-01-01T00:00:00.000Z' },
+        'medium.txt': { type: 'file', size: 500000, mtime: '2023-01-01T00:00:00.000Z' },
+        'large.txt': { type: 'file', size: 5000000, mtime: '2023-01-01T00:00:00.000Z' },
+      };
+      const stats = computeStats(tree, { sizeDist: true });
+      expect(stats.sizeDist).toEqual({
+        '<1KB': 1,
+        '1KB-1MB': 1,
+        '>1MB': 1
+      });
     });
   });
 
@@ -148,6 +205,28 @@ describe('fs-utils', () => {
       };
       const results = searchTree(tree, 'file', { basePath: testDir, ext: '.txt' });
       expect(results).toEqual([join(testDir, 'file1.txt')]);
+    });
+
+    it('handles empty tree', () => {
+      const results = searchTree({}, 'file', { basePath: testDir });
+      expect(results).toEqual([]);
+    });
+
+    it('handles case insensitive search', () => {
+      const tree: FileNode = {
+        'File.txt': null,
+        'file.js': null,
+      };
+      const results = searchTree(tree, 'FILE', { basePath: testDir });
+      expect(results).toEqual([join(testDir, 'File.txt'), join(testDir, 'file.js')]);
+    });
+
+    it('handles nested directory with same name as search term', () => {
+      const tree: FileNode = {
+        'file': { 'nested.txt': null }
+      };
+      const results = searchTree(tree, 'file', { basePath: testDir });
+      expect(results).toEqual([]);  // Should not match directory names
     });
   });
 });

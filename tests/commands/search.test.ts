@@ -20,7 +20,7 @@ describe('search command', () => {
   });
 
   it('filters by extension', () => {
-    const output = execSync(`node dist/index.js search ${testDir} .js -e "*.js"`, { encoding: 'utf-8' });
+    const output = execSync(`node dist/index.js search ${testDir} .js -t ".js"`, { encoding: 'utf-8' });
     expect(output).toContain(join(testDir, 'src', 'utils.js'));
     expect(output).not.toContain('main.ts');
   });

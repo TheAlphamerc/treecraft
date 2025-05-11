@@ -2,11 +2,6 @@ import { parseJsonTree, parseTextTree, parseYamlTree } from '../../src/lib/parse
 import { EOL } from 'os';
 import chalk from 'chalk';
 
-// Mock process.exit to throw instead of crashing
-jest.spyOn(process, 'exit').mockImplementation((code) => {
-  throw new Error(`process.exit called with code ${code}`);
-});
-
 // Mocking chalk module
 jest.mock('chalk', () => ({
   green: jest.fn((text) => `[green]${text}[/green]`),
@@ -29,10 +24,7 @@ describe('parser', () => {
 
     it('throws on invalid JSON', () => {
       const invalidJson = '{file: null';
-      expect(() => parseJsonTree(invalidJson)).toThrow('process.exit called with code 1');
-      expect(chalk.red).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid JSON: Expected property name or \'}\' in JSON at position 1')
-      );
+      expect(() => parseJsonTree(invalidJson)).toThrow('Invalid JSON:');
     });
   });
 
@@ -45,8 +37,7 @@ describe('parser', () => {
 
     it('throws on invalid YAML', () => {
       const invalidYaml = 'file.txt: : invalid';
-      expect(() => parseYamlTree(invalidYaml)).toThrow('process.exit called with code 1');
-      expect(chalk.red).toHaveBeenCalledWith(expect.stringContaining('Invalid YAML:'));
+      expect(() => parseYamlTree(invalidYaml)).toThrow('Invalid YAML:');
     });
   });
 
@@ -119,20 +110,17 @@ describe('parser', () => {
     describe('error cases', () => {
       it('throws on invalid structure', () => {
         const invalidText = 'invalid-line';
-        expect(() => parseTextTree(invalidText)).toThrow('process.exit called with code 1');
-        expect(chalk.red).toHaveBeenCalledWith(expect.stringContaining('Invalid tree structure at line 1'));
+        expect(() => parseTextTree(invalidText)).toThrow('Invalid tree structure at line 1');
       });
 
       it('throws on invalid depth jump', () => {
         const text = `├── file.txt${EOL}│   │   └── sub.txt`;
-        expect(() => parseTextTree(text)).toThrow('process.exit called with code 1');
-        expect(chalk.red).toHaveBeenCalledWith(expect.stringContaining('Invalid nesting at line 2'));
+        expect(() => parseTextTree(text)).toThrow('Invalid nesting at line 2');
       });
 
       it('throws on malformed indentation', () => {
         const text = `├── file.txt${EOL}    └── sub.txt`;
-        expect(() => parseTextTree(text)).toThrow('process.exit called with code 1');
-        expect(chalk.red).toHaveBeenCalledWith(expect.stringContaining('Invalid indentation at line 2'));
+        expect(() => parseTextTree(text)).toThrow('Invalid indentation at line 2');
       });
     });
   });

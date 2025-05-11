@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import { join } from 'path';
-import { mkdirSync, writeFileSync, readdirSync, rmSync } from 'fs';
+import { mkdirSync, writeFileSync, readdirSync, rmSync, readFileSync } from 'fs';
 import { baseTestDir } from '../setup';
 
 describe('stats command', () => {
@@ -33,6 +33,40 @@ describe('stats command', () => {
     expect(output).toContain('Files: 0');
     expect(output).toContain('Dirs: 0');
     expect(output).toContain('Total Size: 0B');
+  });
+
+  it('shows file type breakdown', () => {
+    const output = execSync(`node dist/index.js stats ${testDir} -t`, { encoding: 'utf-8' });
+    expect(output).toContain('File Types:');
+    expect(output).toContain('.ts');
+    expect(output).toContain('.js');
+  });
+
+  it('exports as JSON', () => {
+    const outFile = join(testDir, 'stats.json');
+    execSync(`node dist/index.js stats ${testDir} -x json > ${outFile}`, { encoding: 'utf-8' });
+    const content = JSON.parse(readFileSync(outFile, 'utf-8'));
+    expect(content).toHaveProperty('files', 3);
+    expect(content).toHaveProperty('dirs', 1);
+    expect(content).toHaveProperty('totalSize');
+  });
+
+  it('sorts size distribution by size', () => {
+    // Create files of different sizes first
+    writeFileSync(join(testDir, 'large.bin'), Buffer.alloc(2 * 1024 * 1024));  // 2MB
+    writeFileSync(join(testDir, 'medium.bin'), Buffer.alloc(500 * 1024));      // 500KB
+
+    const output = execSync(`node dist/index.js stats ${testDir} -s -r size`, { encoding: 'utf-8' });
+
+    // Check that >1MB appears in the output and is before the other size categories
+    expect(output).toContain('>1MB');
+    expect(output.indexOf('>1MB')).toBeLessThan(output.indexOf('1KB-1MB'));
+    expect(output.indexOf('1KB-1MB')).toBeLessThan(output.indexOf('<1KB'));
+  });
+
+  it('respects filter patterns', () => {
+    const output = execSync(`node dist/index.js stats ${testDir} -f "*.ts"`, { encoding: 'utf-8' });
+    expect(output).toContain('Files: 1');  // Only main.ts
   });
 
   afterAll(() => {
