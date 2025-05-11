@@ -32,7 +32,7 @@ describe('viz command', () => {
       execSync(`node dist/index.js viz ./nonexistent -c`, { encoding: 'utf-8' });
       throw new Error('Command should have failed');
     } catch (err) {
-      expect((err as ExecException).message).toContain('ENOENT');
+      expect((err as ExecException).message).toContain('ValidationError');
     }
   });
 

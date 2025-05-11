@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { statSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { formatTree } from '../lib/formatters';
 import { buildTree } from '../lib/fs-utils';
 import { FileMetadata, FileNode } from '../types';
+import { withErrorHandling, validateDirectory, ValidationError, IOError } from '../lib/errors';
 
 /**
  * Command for visualizing directory structures
@@ -16,7 +17,6 @@ import { FileMetadata, FileNode } from '../types';
 export const vizCommand = new Command()
   .name('viz')
   .description('Visualize directory structure')
-  .description('Visualize or export directory structure')
   .argument('[path]', 'Directory to visualize/export', '.')
   .option('-m, --mode <mode>', 'Visualization mode (tree, graph, list, interactive)', 'tree')
   .option('-d, --depth <n>', 'Limit tree depth', parseInt)
@@ -26,56 +26,54 @@ export const vizCommand = new Command()
   .option('-x, --export <format>', 'Export format (text, json, yaml)')
   .option('-w, --with-metadata', 'Include metadata (size, modified time) in output')
   .option('-o, --output-file <file>', 'Write output to file')
-  .action((path, options) => {
-    try {
-      if (!statSync(path).isDirectory()) {
-        throw new Error(`'${path}' is not a directory`);
-      }
+  .action(withErrorHandling((path, options) => {
+    // Validate that the path is a directory
+    validateDirectory(path);
 
-      const tree = buildTree(path, {
-        depth: options.depth || Infinity,
-        withMetadata: options.withMetadata,
-        filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-        exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-      });
+    const tree = buildTree(path, {
+      depth: options.depth || Infinity,
+      withMetadata: options.withMetadata,
+      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+    });
 
-      let output: string;
-      switch (options.mode) {
-        case 'tree':
-          output = formatTree(tree, { export: options.export, withMetadata: options.withMetadata });
-          break;
-        case 'list':
-          output = formatList(tree); // Simple stub for now
-          break;
-        case 'graph':
-          output = 'Graph mode not yet implemented';
-          break;
-        case 'interactive':
-          output = 'Interactive mode not yet implemented';
-          break;
-        default:
-          throw new Error(`Invalid mode: ${options.mode}`);
-      }
+    let output: string;
+    switch (options.mode) {
+      case 'tree':
+        output = formatTree(tree, { export: options.export, withMetadata: options.withMetadata });
+        break;
+      case 'list':
+        output = formatList(tree);
+        break;
+      case 'graph':
+        output = 'Graph mode not yet implemented';
+        break;
+      case 'interactive':
+        output = 'Interactive mode not yet implemented';
+        break;
+      default:
+        throw new ValidationError(`Invalid mode: ${options.mode}`);
+    }
 
-      // Handle output
-      if (options.outputFile) {
+    // Handle output
+    if (options.outputFile) {
+      try {
         writeFileSync(options.outputFile, output, 'utf-8');
         console.log(chalk.blue(`Exported to ${options.outputFile}`));
+      } catch (err: any) {
+        throw new IOError(`Failed to write to output file: ${err.message}`, err);
       }
-      else if (options.color && options.mode === 'tree') {
-        console.log(chalk.yellow('Tree:\n') + chalk.green(output));
-      }
-      else if (options.export) {
-        console.log(output); // Clean output for redirection
-      }
-      else {
-        console.log(output);
-      }
-    } catch (err: any) {
-      console.error(chalk.red(`Error: ${err.message}`));
-      process.exit(1);
     }
-  });
+    else if (options.color && options.mode === 'tree') {
+      console.log(chalk.yellow('Tree:\n') + chalk.green(output));
+    }
+    else if (options.export) {
+      console.log(output); // Clean output for redirection
+    }
+    else {
+      console.log(output);
+    }
+  }));
 
 /**
  * Formats a directory tree as a flat list

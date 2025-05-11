@@ -1,8 +1,7 @@
 import { Command } from 'commander';
-import { statSync } from 'fs';
 import { buildTree, computeStats } from '../lib/fs-utils';
 import { formatStats } from '../lib/formatters';
-import chalk from 'chalk';
+import { withErrorHandling, validateDirectory } from '../lib/errors';
 
 /**
  * Command for analyzing and displaying directory statistics
@@ -24,23 +23,23 @@ export const statsCommand = new Command()
   .option('-d, --depth <n>', 'Limit stats to depth', parseInt)
   .option('-t, --file-types', 'Show file type breakdown')
   .option('-r, --sort <key>', 'Sort size distribution (size, count)', 'count')
-  .action((path, options) => {
-    try {
-      if (!statSync(path).isDirectory()) {
-        throw new Error(`'${path}' is not a directory`);
-      }
+  .action(withErrorHandling((path, options) => {
+    // Validate that the path is a directory
+    validateDirectory(path);
 
-      const tree = buildTree(path, {
-        withMetadata: true,
-        filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-        exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-        depth: options.depth,
-      });
-      const stats = computeStats(tree, { sizeDist: options.sizeDist, fileTypes: options.fileTypes, sort: options.sort });
-      const output = formatStats(stats, options);
-      console.log(output);
-    } catch (err: any) {
-      console.error(chalk.red(`Error: ${err.message}`));
-      process.exit(1);
-    }
-  });
+    const tree = buildTree(path, {
+      withMetadata: true,
+      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+      depth: options.depth,
+    });
+
+    const stats = computeStats(tree, {
+      sizeDist: options.sizeDist,
+      fileTypes: options.fileTypes,
+      sort: options.sort
+    });
+
+    const output = formatStats(stats, options);
+    console.log(output);
+  }));

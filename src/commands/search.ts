@@ -4,6 +4,7 @@ import { formatSearchResults, formatTree } from '../lib/formatters';
 import { FileMetadata, FileNode } from '../types';
 import { statSync } from 'fs';
 import chalk from 'chalk';
+import { withErrorHandling, validateDirectory, ValidationError } from '../lib/errors';
 
 /**
  * Command for searching files by name in a directory
@@ -24,26 +25,27 @@ export const searchCommand = new Command()
   .option('-d, --depth <n>', 'Limit tree depth')
   .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
   .option('-x, --export <format>', 'Export format (text, json, yaml)')
-  .action((path, query, options) => {
-    try {
-      if (!statSync(path).isDirectory()) {
-        throw new Error(`'${path}' is not a directory`);
-      }
+  .action(withErrorHandling((path, query, options) => {
+    // Validate directory exists
+    validateDirectory(path);
 
-      // Build tree with minimal metadata unless content search is needed
-      const tree = buildTree(path, {
-        depth: options.depth || Infinity,
-        filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-        exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-      });
-      const results = searchTree(tree, query, {
-        ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts
-        basePath: path,
-      });
-      const output = formatSearchResults(results, options);
-      console.log(output);
-    } catch (err: any) {
-      console.error(chalk.red(`Error: ${err.message}`));
-      process.exit(1);
+    // Build tree with minimal metadata unless content search is needed
+    const tree = buildTree(path, {
+      depth: options.depth || Infinity,
+      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+    });
+
+    // Validate query
+    if (!query || query.trim() === '') {
+      throw new ValidationError('Search query cannot be empty');
     }
-  });
+
+    const results = searchTree(tree, query, {
+      ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts
+      basePath: path,
+    });
+
+    const output = formatSearchResults(results, options);
+    console.log(output);
+  }));
