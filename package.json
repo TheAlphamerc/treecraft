@@ -1,7 +1,7 @@
 {
   "name": "treecraft",
   "description": "A simple CLI for directory visualization, generation, and analysis, designed for developers and testers",
-  "version": "0.0.2",
+  "version": "1.0.2",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsup --watch",
