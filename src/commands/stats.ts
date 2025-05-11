@@ -18,21 +18,20 @@ export const statsCommand = new Command()
   .action((path, options) => {
     try {
       if (!statSync(path).isDirectory()) {
-        console.error(chalk.red(`Error: '${path}' is not a directory`));
-        process.exit(1);
+        throw new Error(`'${path}' is not a directory`);
       }
+
+      const tree = buildTree(path, {
+        withMetadata: true,
+        filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+        exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+        depth: options.depth,
+      });
+      const stats = computeStats(tree, { sizeDist: options.sizeDist, fileTypes: options.fileTypes, sort: options.sort });
+      const output = formatStats(stats, options);
+      console.log(output);
     } catch (err: any) {
-      console.error(chalk.red(`Error: Cannot access '${path}' - ${err.message}`));
+      console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);
     }
-
-    const tree = buildTree(path, {
-      withMetadata: true,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-      depth: options.depth,
-    });
-    const stats = computeStats(tree, { sizeDist: options.sizeDist, fileTypes: options.fileTypes, sort: options.sort });
-    const output = formatStats(stats, options);
-    console.log(output);
   });

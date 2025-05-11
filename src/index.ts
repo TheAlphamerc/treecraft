@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name('treecraft')
   .description('A powerful CLI for directory visualization and generation')
-  .version('1.0.0');
+  .version('0.0.2');
 
 program.addCommand(vizCommand);
 program.addCommand(genCommand);

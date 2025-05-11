@@ -14,19 +14,19 @@ export const genCommand = new Command()
   .option('-s, --skip-all', 'Skip existing files/directories')
   .option('-w, --overwrite-all', 'Overwrite existing files/directories')
   .action((input, options) => {
-    // Check if output exists and handle conflicts
-    if (existsSync(options.output)) {
-      if (!options.skipAll && !options.overwriteAll) {
-        console.error(chalk.red(`Error: Output directory '${options.output}' already exists. Use --skip-all or --overwrite-all.`));
-        process.exit(1);
-      }
-    }
-
-    // Read and parse the input file
-    let spec: FileNode;
-    const fileContent = readFileSync(input, 'utf-8');
-    const ext = input.toLowerCase().split('.').pop();
     try {
+      // Check if output exists and handle conflicts
+      if (existsSync(options.output)) {
+        if (!options.skipAll && !options.overwriteAll) {
+          throw new Error(`Output directory '${options.output}' already exists. Use --skip-all or --overwrite-all.`);
+        }
+      }
+
+      // Read and parse the input file
+      let spec: FileNode;
+      const fileContent = readFileSync(input, 'utf-8');
+      const ext = input.toLowerCase().split('.').pop();
+
       if (ext === 'json') {
         spec = JSON.parse(fileContent);
       } else if (ext === 'yaml' || ext === 'yml') {
@@ -34,19 +34,18 @@ export const genCommand = new Command()
       } else if (ext === 'txt') {
         spec = parseTextTree(fileContent);
       } else {
-        console.error(chalk.red(`Error: Unsupported file format '${ext}'. Use .json, .yaml, or .txt.`));
-        process.exit(1);
+        throw new Error(`Unsupported file format '${ext}'. Use .json, .yaml, or .txt.`);
       }
+
+      // Generate the structure
+      generateStructure(spec, options.output, {
+        skipAll: options.skipAll,
+        overwriteAll: options.overwriteAll,
+      });
+
+      console.log(chalk.green(`Structure generated at '${options.output}'`));
     } catch (err: any) {
-      console.error(chalk.red(`Error parsing '${input}': ${err.message}`));
+      console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);
     }
-
-    // Generate the structure
-    generateStructure(spec, options.output, {
-      skipAll: options.skipAll,
-      overwriteAll: options.overwriteAll,
-    });
-
-    console.log(chalk.green(`Structure generated at '${options.output}'`));
   });

@@ -7,8 +7,7 @@ export function parseJsonTree(content: string): FileNode {
   try {
     return JSON.parse(content);
   } catch (err) {
-    console.error(chalk.red(`Invalid JSON: ${(err as Error).message}`));
-    process.exit(1);
+    throw new Error(`Invalid JSON: ${(err as Error).message}`);
   }
 }
 
@@ -16,8 +15,7 @@ export function parseYamlTree(content: string): FileNode {
   try {
     return load(content) as FileNode;
   } catch (err) {
-    console.error(chalk.red(`Invalid YAML: ${(err as Error).message}`));
-    process.exit(1);
+    throw new Error(`Invalid YAML: ${(err as Error).message}`);
   }
 }
 
@@ -31,18 +29,15 @@ export function parseTextTree(text: string): FileNode {
 
     const itemStart = line.indexOf('├──') !== -1 ? line.indexOf('├──') : line.indexOf('└──');
     if (itemStart === -1) {
-      console.error(chalk.red(`Invalid tree structure at line ${i + 1}: '${line}'`));
-      process.exit(1);
+      throw new Error(`Invalid tree structure at line ${i + 1}: '${line}'`);
     }
 
     const indent = line.slice(0, itemStart);
     const depth = indent.length / 4;
     const expectedIndent = depth === 0 ? '' : '│   '.repeat(depth);
-    console.log({ line, indent, depth, expectedIndent, stackLength: stack.length });
 
     if (indent !== expectedIndent) {
-      console.error(chalk.red(`Invalid indentation at line ${i + 1}: '${line}' - Expected '${expectedIndent}├──' or '${expectedIndent}└──'`));
-      process.exit(1);
+      throw new Error(`Invalid indentation at line ${i + 1}: '${line}' - Expected '${expectedIndent}├──' or '${expectedIndent}└──'`);
     }
 
     // Adjust stack first
@@ -50,8 +45,7 @@ export function parseTextTree(text: string): FileNode {
 
     // Then check for invalid depth jump
     if (depth > stack.length) {
-      console.error(chalk.red(`Invalid nesting at line ${i + 1}: '${line}' - too deep`));
-      process.exit(1);
+      throw new Error(`Invalid nesting at line ${i + 1}: '${line}' - too deep`);
     }
 
     const parent = stack[stack.length - 1].node;
@@ -78,8 +72,6 @@ export function parseTextTree(text: string): FileNode {
     } else {
       parent[name] = content;
     }
-
-    console.log({ stack: stack.map(s => s.depth) });
   }
 
   return tree;

@@ -21,52 +21,51 @@ export const vizCommand = new Command()
   .action((path, options) => {
     try {
       if (!statSync(path).isDirectory()) {
-        console.error(chalk.red(`Error: '${path}' is not a directory`));
-        process.exit(1);
+        throw new Error(`'${path}' is not a directory`);
+      }
+
+      const tree = buildTree(path, {
+        depth: options.depth || Infinity,
+        withMetadata: options.withMetadata,
+        filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+        exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+      });
+
+      let output: string;
+      switch (options.mode) {
+        case 'tree':
+          output = formatTree(tree, { export: options.export, withMetadata: options.withMetadata });
+          break;
+        case 'list':
+          output = formatList(tree); // Simple stub for now
+          break;
+        case 'graph':
+          output = 'Graph mode not yet implemented';
+          break;
+        case 'interactive':
+          output = 'Interactive mode not yet implemented';
+          break;
+        default:
+          throw new Error(`Invalid mode: ${options.mode}`);
+      }
+
+      // Handle output
+      if (options.outputFile) {
+        writeFileSync(options.outputFile, output, 'utf-8');
+        console.log(chalk.blue(`Exported to ${options.outputFile}`));
+      }
+      else if (options.color && options.mode === 'tree') {
+        console.log(chalk.yellow('Tree:\n') + chalk.green(output));
+      }
+      else if (options.export) {
+        console.log(output); // Clean output for redirection
+      }
+      else {
+        console.log(output);
       }
     } catch (err: any) {
-      console.error(chalk.red(`Error: Cannot access '${path}' - ${err.message}`));
+      console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);
-    }
-
-    const tree = buildTree(path, {
-      depth: options.depth || Infinity,
-      withMetadata: options.withMetadata,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-    });
-
-    let output: string;
-    switch (options.mode) {
-      case 'tree':
-        output = formatTree(tree, { export: options.export, withMetadata: options.withMetadata });
-        break;
-      case 'list':
-        output = formatList(tree); // Simple stub for now
-        break;
-      case 'graph':
-        output = 'Graph mode not yet implemented';
-        break;
-      case 'interactive':
-        output = 'Interactive mode not yet implemented';
-        break;
-      default:
-        output = chalk.red(`Invalid mode: ${options.mode}`);
-    }
-
-    // Handle output
-    if (options.outputFile) {
-      writeFileSync(options.outputFile, output, 'utf-8');
-      console.log(chalk.blue(`Exported to ${options.outputFile}`));
-    }
-    else if (options.color && options.mode === 'tree') {
-      console.log(chalk.yellow('Tree:\n') + chalk.green(output));
-    }
-    else if (options.export) {
-      console.log(output); // Clean output for redirection
-    }
-    else {
-      console.log(output);
     }
   });
 // Stub for list mode (pending full implementation)

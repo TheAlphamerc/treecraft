@@ -10,31 +10,31 @@ export const searchCommand = new Command()
   .description('Search files by name or content')
   .argument('[path]', 'Directory to search', '.')
   .argument('<query>', 'Search term')
-  .option('-f, --filter <patterns>', 'Include only patterns (e.g. *.ts, *.js)')
+  .option('-f, --filter <patterns>', 'Include only patterns (comma-separated)')
+  .option('-t, --ext <extension>', 'Filter by file extension (e.g. .ts, .js)')
   .option('-d, --depth <n>', 'Limit tree depth')
   .option('-e, --exclude <patterns>', 'Exclude patterns (comma-separated)')
   .option('-x, --export <format>', 'Export format (text, json, yaml)')
   .action((path, query, options) => {
     try {
       if (!statSync(path).isDirectory()) {
-        console.error(chalk.red(`Error: '${path}' is not a directory`));
-        process.exit(1);
+        throw new Error(`'${path}' is not a directory`);
       }
+
+      // Build tree with minimal metadata unless content search is needed
+      const tree = buildTree(path, {
+        depth: options.depth || Infinity,
+        filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
+        exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
+      });
+      const results = searchTree(tree, query, {
+        ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts
+        basePath: path,
+      });
+      const output = formatSearchResults(results, options);
+      console.log(output);
     } catch (err: any) {
-      console.error(chalk.red(`Error: Cannot access '${path}' - ${err.message}`));
+      console.error(chalk.red(`Error: ${err.message}`));
       process.exit(1);
     }
-
-    // Build tree with minimal metadata unless content search is needed
-    const tree = buildTree(path, {
-      depth: options.depth || Infinity,
-      filter: options.filter ? options.filter.split(',').map((p: string) => p.trim()) : [],
-      exclude: options.exclude ? options.exclude.split(',').map((p: string) => p.trim()) : [],
-    });
-    const results = searchTree(tree, query, {
-      ext: options.ext ? options.ext.replace(/^\*\./, '.') : undefined, // Normalize *.ts to .ts
-      basePath: path,
-    });
-    const output = formatSearchResults(results, options);
-    console.log(output);
   });
